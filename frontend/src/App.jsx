@@ -77,7 +77,6 @@ export default function App() {
   );
 }
 
-<<<<<<< HEAD
 // --- APP CONTENT ---
 const AppContent = ({ categories, setCategories, allStats, setAllStats, users, setUsers, currentUser, setCurrentUser }) => {
   const location = useLocation();
@@ -213,9 +212,9 @@ const AuthPage = ({ mode, users, setUsers, setCurrentUser }) => {
       </form>
 
       {mode === 'login' ? (
-        <p>Don't have an account? <Link to="/signup" style={{ color: '#8b5cf6', fontWeight: 'bold' }}>Create one here</Link></p>
+        <p style={{ color: 'black' }}>Don't have an account? <Link to="/signup" style={{ color: '#8b5cf6', fontWeight: 'bold' }}>Create one here</Link></p>
       ) : (
-        <p>Already have an account? <Link to="/login" style={{ color: '#8b5cf6', fontWeight: 'bold' }}>Log in here</Link></p>
+        <p style={{ color: 'black' }}>Already have an account? <Link to="/login" style={{ color: '#8b5cf6', fontWeight: 'bold' }}>Log in here</Link></p>
       )}
     </div>
   );
@@ -332,6 +331,3 @@ const RankingPage = ({ categories, allStats, setAllStats, currentUser }) => {
     </div>
   );
 };
-=======
-export default App
->>>>>>> 87432a73a2b8bd4bb6708e0ccf5bc26d4c448c11
