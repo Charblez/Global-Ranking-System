@@ -1,21 +1,21 @@
 # Global Ranking System
-Global Ranking System is a platform that allows users to submit their person metrics (e.g., height, weight, etc.) across various categories and see how they compare to the rest of the world. The system tracks indivudal user histrories while dynamically maintaining global and community baselines, using statistical outlier rejection to ensure data integrity.
+Global Ranking System is a platform that allows users to submit their personal metrics (e.g., height, weight, etc.) across various categories and see how they compare to the rest of the world. The system tracks indivudal user histories while dynamically maintaining global and community baselines, using statistical outlier rejection to ensure data integrity.
 
 ## Core Features
 ### 1. User Accounts & Authentication
 - **Account Requirements:** Users must create an account to upload scores or propose new categories. This acts as the primary rate-limiting and anti-spam measure.
 - **Verification:** Currently, there is no email or identity verification required for account creation.
-- **Profile Demographics:** Users can save default demographics (Dat of Birth, Sex, Region) to their profile to enable some auto filling for score submissions.
+- **Profile Demographics:** Users can save default demographics (Date of Birth, Sex, Region) to their profile to enable some auto filling for score submissions.
 
 ### 2. Category Management
 - **Admin Approval:** Users can propose new measurement categories, but all categories require Admin approval before going live to prevent duplicates and enforce data standards.
 - **Granular Configurations:** When creating a category, the following parameters are defined.
     - **Units:** The specific unit of measurement (e.g., cm, lbs, kg).
-    - **Separation Rules:** Options for whether the category requires sepparation by Region, Sex, and/or Age Group.
+    - **Separation Rules:** Options for whether the category requires separation by Region, Sex, and/or Age Group.
 
 ### 3. Score Tracking & History
 - **Personal Records:** The system highlights a user's highest (or best) score in a given category.
-- **Score History:** A complete, time-stamped history of all uploads is retains so users can track their progress over time.
+- **Score History:** A complete, time-stamped history of all uploads is retained so users can track their progress over time.
 
 ### 4. Global Baselines & Statistics
 - **External APIs vs. Internal Logic:** If highly reliable, static data exists (e.g., WHO or CDC LMS parameters), the system will use seeded table to calculate medical-grade z-scores.
