@@ -56,9 +56,9 @@ public class StatisticsController {
     public List<CategorySummary> categories() {
         return categoryRepository.findAll().stream()
                 .map(category -> new CategorySummary(
-                        category.categoryId(),
-                        category.units(),
-                        category.sortOrder()
+                        category.getCategoryId(),
+                        category.getUnits(),
+                        category.getSortOrder()
                 ))
                 .toList();
     }
@@ -82,7 +82,7 @@ public class StatisticsController {
 
         return categoryRepository.findById(parsedCategoryId)
                 .<ResponseEntity<?>>map(category -> {
-                    List<Double> values = extractValuesForCategory(category.categoryId());
+                    List<Double> values = extractValuesForCategory(category.getCategoryId());
                     
                     // Avoiding passing an empty list to the calculation service.
                     if (values.isEmpty()) {
@@ -93,9 +93,9 @@ public class StatisticsController {
                     // Perform the statistical math via the service.
                     StatsSummary stats = statisticsService.calculate(values, userValue);
                     return ResponseEntity.ok(new CategoryStatsResponse(
-                            category.categoryId(),
-                            category.units(),
-                            category.sortOrder(),
+                            category.getCategoryId(),
+                            category.getUnits(),
+                            category.getSortOrder(),
                             stats
                     ));
                 })
@@ -163,8 +163,8 @@ public class StatisticsController {
                     .body(Map.of("error", "No global baseline found for category: " + categoryId));
         }
 
-        Float meanValue = baseline.mean();
-        Float standardDeviationValue = baseline.standardDeviation();
+        Float meanValue = baseline.getMean();
+        Float standardDeviationValue = baseline.getStandardDeviation();
         if (meanValue == null || standardDeviationValue == null) {
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                     .body(Map.of("error", "Baseline is missing mean or standard deviation values."));
@@ -173,10 +173,10 @@ public class StatisticsController {
         final double normalizedUserValue;
         final String inputUnitDescription;
         try {
-            normalizedUserValue = resolveComparisonValue(category.units(), userValue, feet, inches);
+            normalizedUserValue = resolveComparisonValue(category.getUnits(), userValue, feet, inches);
             inputUnitDescription = userValue != null
-                    ? category.units()
-                    : "ft/in converted to " + category.units();
+                    ? category.getUnits()
+                    : "ft/in converted to " + category.getUnits();
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }
@@ -187,13 +187,13 @@ public class StatisticsController {
         double percentile = percentileFromBaseline(normalizedUserValue, mean, standardDeviation);
 
         return ResponseEntity.ok(new GlobalComparisonResponse(
-                category.categoryId(),
-                category.name(),
-                category.units(),
-                baseline.sourceName(),
-                baseline.sampleSize(),
+                category.getCategoryId(),
+                category.getName(),
+                category.getUnits(),
+                baseline.getSourceName(),
+                baseline.getSampleSize(),
                 mean,
-                baseline.median() == null ? null : baseline.median().doubleValue(),
+                baseline.getMedian() == null ? null : baseline.getMedian().doubleValue(),
                 standardDeviation,
                 normalizedUserValue,
                 inputUnitDescription,
@@ -245,7 +245,7 @@ public class StatisticsController {
     private List<Double> extractValuesForCategory(UUID categoryId) {
         return scoreRepository.findAll().stream()
                 .filter(score -> belongsToCategory(score, categoryId))
-                .map(Score::score)
+                .map(Score::getScore)
                 // Ensure we don't pass nulls or incompatible types to math functions.
                 .filter(Objects::nonNull)
                 .map(Float::doubleValue)
@@ -254,9 +254,9 @@ public class StatisticsController {
 
     
     private boolean belongsToCategory(Score score, UUID categoryId) {
-        Category scoreCategory = score.category();
-        return scoreCategory != null && scoreCategory.categoryId() != null
-                && scoreCategory.categoryId().equals(categoryId);
+        Category scoreCategory = score.getCategory();
+        return scoreCategory != null && scoreCategory.getCategoryId() != null
+                && scoreCategory.getCategoryId().equals(categoryId);
     }
 
     private double resolveComparisonValue(
