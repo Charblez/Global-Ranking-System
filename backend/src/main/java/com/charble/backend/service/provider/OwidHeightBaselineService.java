@@ -3,6 +3,8 @@ package com.charble.backend.service.provider;
 import com.charble.backend.model.Category;
 import com.charble.backend.model.GlobalBaseline;
 import com.charble.backend.model.User;
+import com.charble.backend.model.enums.Region;
+import com.charble.backend.model.enums.Sex;
 import com.charble.backend.repository.CategoryRepository;
 import com.charble.backend.repository.GlobalBaselineRepository;
 import com.charble.backend.repository.UserRepository;
@@ -94,24 +96,38 @@ public class OwidHeightBaselineService {
         GlobalBaseline baseline = globalBaselineRepository.findByCategory(heightCategory)
                 .orElse(new GlobalBaseline(
                         heightCategory,
+                        Region.UNKNOWN,
+                        Sex.UNKNOWN,
+                        null,
+                        null,
                         (float) summary.mean(),
                         (float) summary.median(),
                         (float) summary.standardDeviation(),
+                        null,
+                        null,
+                        null,
                         summary.sampleSize(),
                         sourceName
                 ));
 
-        baseline.updateStatistics(
+        baseline.update(
+                Region.UNKNOWN,
+                Sex.UNKNOWN,
+                null,
+                null,
                 (float) summary.mean(),
                 (float) summary.median(),
                 (float) summary.standardDeviation(),
+                null,
+                null,
+                null,
                 summary.sampleSize(),
                 sourceName
         );
         globalBaselineRepository.save(baseline);
 
         return new HeightBaselineResult(
-                heightCategory.categoryId().toString(),
+                heightCategory.getCategoryId().toString(),
                 latestYear,
                 summary.sampleSize(),
                 summary.mean(),
