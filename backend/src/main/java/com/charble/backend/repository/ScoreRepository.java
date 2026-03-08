@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 //----------------------------------------------------------------------------------------------------
@@ -36,6 +35,8 @@ public interface ScoreRepository extends JpaRepository<Score, UUID>
     Optional<Score> findFirstByCategoryAndUserOrderByScoreDesc(Category category, User user);
 
     Optional<Score> findFirstByCategoryAndUserOrderByScoreAsc(Category category, User user);
+
+    List<Score> findAllByUser(User user);
 
     void deleteAllByCategory(Category category);
 }

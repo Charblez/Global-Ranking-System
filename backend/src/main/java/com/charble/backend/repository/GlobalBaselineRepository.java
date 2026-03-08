@@ -15,6 +15,7 @@ package com.charble.backend.repository;
 import com.charble.backend.model.Category;
 import com.charble.backend.model.GlobalBaseline;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,6 +33,8 @@ public interface GlobalBaselineRepository extends JpaRepository<GlobalBaseline, 
     //------------------------------------------------------------------------------------------------
     @Query("SELECT gb FROM GlobalBaseline gb WHERE gb.category = ?1")
     Optional<GlobalBaseline> findByCategory(Category category);
+
+    List<GlobalBaseline> findAllByCategory(Category category);
 
     void deleteAllByCategory(Category category);
 }
