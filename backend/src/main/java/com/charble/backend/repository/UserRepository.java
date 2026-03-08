@@ -12,7 +12,6 @@ package com.charble.backend.repository;
 //----------------------------------------------------------------------------------------------------
 // Imports
 //----------------------------------------------------------------------------------------------------
-import com.charble.backend.model.Category;
 import com.charble.backend.model.User;
 
 import java.util.Optional;
@@ -32,4 +31,7 @@ public interface UserRepository extends JpaRepository<User, UUID>
     // Single User Lookups
     //------------------------------------------------------------------------------------------------
     Optional<User> findByUsername(String username);
+
+    @Query("SELECT u FROM User u WHERE u.email = ?1")
+    Optional<User> findByEmail(String email);
 }
