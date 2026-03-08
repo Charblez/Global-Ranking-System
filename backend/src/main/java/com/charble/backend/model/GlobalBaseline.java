@@ -74,7 +74,6 @@ public class GlobalBaseline
                        Integer sampleSize,
                        String sourceName)
     {
-        this.category = category;
         this.filters = filters != null ? filters : new HashMap<>();
         this.mean = mean;
         this.median = median;

@@ -28,10 +28,12 @@ import org.springframework.stereotype.Repository;
 public interface GlobalBaselineRepository extends JpaRepository<GlobalBaseline, UUID>
 {
     //------------------------------------------------------------------------------------------------
-    // Public Methods
+    // Single Baseline Lookups
     //------------------------------------------------------------------------------------------------
-    @Query("SELECT gb FROM GlobalBaseline gb WHERE gb.category = ?1")
     Optional<GlobalBaseline> findByCategory(Category category);
 
+    //------------------------------------------------------------------------------------------------
+    // Bulk Deletes
+    //------------------------------------------------------------------------------------------------
     void deleteAllByCategory(Category category);
 }
