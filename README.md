@@ -31,8 +31,15 @@ The API will be available at `http://localhost:8080`
 ```
 
 ## API Endpoints
-| Method | Endpoint  | Description |
-|---|---|---|
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/v1/users | Create a user |
+| GET | /api/v1/users/{username} | Get user by username |
+| POST | /api/v1/categories | Create a category |
+| GET | /api/v1/categories | List all categories (paginated) |
+| POST | /api/v1/scores | Submit a score |
+| GET | /api/v1/leaderboards/{categoryId}/top | Get ranked leaderboard (paginated) |
+| POST | /api/v1/leaderboards/{categoryId}/filtered | Get filtered leaderboard (paginated) |
 
 ## Architecture
 ```
