@@ -52,7 +52,6 @@ const funTitleStyle = {
 };
 
 // --- MAIN APP ---
-// Removed "export default" from here
 function App() {
   const defaultPresets = [
     { name: "Wealth", better: "large", unit: "$", type: "global" },
@@ -347,28 +346,7 @@ const RankingPage = ({ categories, allStats, setAllStats, currentUser }) => {
       <h2 style={{ textTransform: 'capitalize', fontSize: '2.5rem', marginBottom: '20px' }}>{categoryName} Rankings</h2>
       
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', justifyContent: 'center', marginBottom: '40px' }}>
-        <form onSubmit={addEntry} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', backgroundColor: '#fff', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Submit Your Stat</h3>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <input type="number" value={val} onChange={e => setVal(e.target.value)} placeholder="0" style={{ width: '100px', height: '60px', textAlign: 'center', border: '2px solid #8b5cf6', fontSize: '24px', borderRadius: '10px' }} required />
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.unit}</span>
-          </div>
-          <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={gender} onChange={e => setGender(e.target.value)}>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-          <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={region} onChange={e => setRegion(e.target.value)}>
-            <option value="North America">North America</option>
-            <option value="South America">South America</option>
-            <option value="Europe">Europe</option>
-            <option value="Africa">Africa</option>
-            <option value="Asia">Asia</option>
-            <option value="Australia/Oceania">Australia/Oceania</option>
-            <option value="Antarctica">Antarctica</option>
-          </select>
-          <input style={{ ...inputStyle, width: '220px', textAlign: 'center', backgroundColor: '#f3f4f6', color: '#666', cursor: 'not-allowed', marginBottom: 0 }} value={displayName} readOnly title="Change this in your Profile" />
-          <button type="submit" style={{ ...mainButtonStyle, width: '220px', fontSize: '1.1rem', backgroundColor: '#8b5cf6', color: 'white' }}>Add Entry</button>
-        </form>
+        {/* The duplicate form was removed here! */}
         
         {currentUser ? (
           <form onSubmit={addEntry} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', backgroundColor: '#fff', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
