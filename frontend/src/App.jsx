@@ -202,7 +202,7 @@ const AuthPage = ({ mode, users, setUsers, setCurrentUser }) => {
 
   return (
     <div style={pageWrapperStyle}>
-      <h1 style={{ ...funTitleStyle, marginBottom: '10px' }}>GLOBAL RANKING SYSTEM 🏆</h1>
+      <h1 style={{ ...funTitleStyle, marginBottom: '10px' }}> Welcome to STAT-IT! 🏆</h1>
       <h2 style={{ fontSize: '1.8rem', marginBottom: '40px', color: '#666' }}>
         {mode === 'login' ? 'Log in to continue' : 'Create an account'}
       </h2>
