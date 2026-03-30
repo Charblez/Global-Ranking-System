@@ -10,7 +10,10 @@ const createUser = async (userData) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userData),
   });
-  if (!response.ok) throw new Error('Failed to create user');
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(errText);
+  }
   return response.json();
 };
 
@@ -26,7 +29,10 @@ const createCategory = async (categoryData) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(categoryData),
   });
-  if (!response.ok) throw new Error('Failed to create category');
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(errText);
+  }
   return response.json();
 };
 
@@ -42,7 +48,10 @@ const submitScore = async (scoreData) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(scoreData),
   });
-  if (!response.ok) throw new Error('Failed to submit score');
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(errText);
+  }
   return response.json();
 };
 
@@ -83,7 +92,6 @@ export default function App() {
     const fetchCategories = async () => {
       try {
         const data = await getAllCategories();
-        // Assuming your paginated response has the list in data.categories or data.content
         const categoryList = data.categories || data.content || data; 
         setCategories(categoryList);
       } catch (err) {
@@ -199,7 +207,7 @@ const AuthPage = ({ mode, setCurrentUser }) => {
         navigate('/');
       }
     } catch (err) {
-      alert(mode === 'signup' ? "Error creating account. Username might be taken." : "User not found. Please try again.");
+      alert(mode === 'signup' ? `Error creating account: ${err.message}` : `Login failed: ${err.message}`);
     }
   };
 
@@ -241,7 +249,7 @@ const CategoryList = ({ title, categories }) => (
             textDecoration: 'none', color: 'black', fontWeight: 'bold', borderRadius: '15px', backgroundColor: '#fff', fontSize: '1.1rem', boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
           }}>
             <span>{cat.name}</span>
-            <span style={{fontSize: '0.8rem', color: '#666', marginTop: '10px'}}>{cat.units}</span>
+            <span style={{fontSize: '0.8rem', color: '#666', marginTop: '10px'}}>{cat.units_of_measurement || cat.units}</span>
           </Link>
         ))}
       </div>
@@ -262,13 +270,19 @@ const CreateCategory = ({ currentUser, setCategories }) => {
     if (!name || !unit) return;
     try {
       const newCat = await createCategory({
-        name, description, units: unit, tags: [], 
-        sort_order: better === 'large', founding_username: currentUser.username
+        name: name,
+        description: description,
+        unitsOfMeasurement: unit, 
+        tags: {}, 
+        sortOrder: better === 'large',
+        foundingUsername: currentUser.username,
+        founding_username: currentUser.username // Sending both just in case!
       });
       setCategories(prev => [...prev, newCat.category || newCat]); 
       navigate('/global');
     } catch (err) {
-      alert("Failed to create category. Ensure the backend is running.");
+      // This will now show the EXACT error message from Spring Boot!
+      alert(`Backend rejected the category:\n\n${err.message}`);
     }
   };
 
@@ -334,7 +348,7 @@ const RankingPage = ({ categories, currentUser }) => {
       setVal(""); 
       fetchLeaderboard();
     } catch (err) {
-      alert("Failed to submit score.");
+      alert(`Failed to submit score: ${err.message}`);
     }
   };
 
@@ -343,7 +357,7 @@ const RankingPage = ({ categories, currentUser }) => {
       <h3 style={{ margin: '15px 0', fontSize: '1.4rem', color: '#8b5cf6' }}>{title} Table</h3>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1.1rem' }}>
         <thead style={{ position: 'sticky', top: 0, backgroundColor: '#8b5cf6', color: 'white', zIndex: 1 }}>
-          <tr><th style={{ padding: '12px' }}>Rank</th><th>{catInfo.units || 'Score'}</th><th>Name</th></tr>
+          <tr><th style={{ padding: '12px' }}>Rank</th><th>{catInfo.units_of_measurement || catInfo.units || 'Score'}</th><th>Name</th></tr>
         </thead>
         <tbody>
           {statsToRender.length === 0 ? (
@@ -373,7 +387,7 @@ const RankingPage = ({ categories, currentUser }) => {
             <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Submit Your Stat</h3>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <input type="number" step="any" value={val} onChange={e => setVal(e.target.value)} placeholder="0" style={{ width: '100px', height: '60px', textAlign: 'center', border: '2px solid #8b5cf6', fontSize: '24px', borderRadius: '10px' }} required />
-              <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.units}</span>
+              <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.units_of_measurement || catInfo.units}</span>
             </div>
             <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={gender} onChange={e => setGender(e.target.value)}>
               <option value="Male">Male</option><option value="Female">Female</option>
