@@ -63,7 +63,7 @@ const getTopScores = async (categoryId, page = 0, size = 25) => {
 
 // --- STYLES & LOCAL STORAGE HELPER ---
 const getStorage = (key, defaultValue) => {
-  const saved = localStorage.getItem(key);
+  const saved = sessionStorage.getItem(key);
   return saved ? JSON.parse(saved) : defaultValue;
 };
 
@@ -84,7 +84,7 @@ export default function App() {
 
   // Keep current user logged in across refreshes
   useEffect(() => {
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
   }, [currentUser]);
 
   // Fetch all categories on initial load
@@ -115,7 +115,13 @@ export default function App() {
 
 // --- APP CONTENT ---
 const AppContent = ({ categories, setCategories, currentUser, setCurrentUser }) => {
-  const logout = () => setCurrentUser(null);
+  const navigate = useNavigate();
+
+  const logout = () => {
+    setCurrentUser(null);
+    sessionStorage.removeItem('currentUser');
+    navigate('/login');
+  };
 
   return (
     <>
@@ -199,11 +205,13 @@ const AuthPage = ({ mode, setCurrentUser }) => {
         const newUser = await createUser({
           username, email, passwordHash: password, birthday, demographics: {} 
         });
-        setCurrentUser({ ...newUser.user, isAnonymous: false }); 
+        const userData = newUser.user || newUser; 
+        setCurrentUser({ ...userData, isAnonymous: false }); 
         navigate('/');
       } else {
         const existingUser = await getUserByUsername(username);
-        setCurrentUser({ ...existingUser.user, isAnonymous: false });
+        const userData = existingUser.user || existingUser;
+        setCurrentUser({ ...userData, isAnonymous: false });
         navigate('/');
       }
     } catch (err) {
@@ -243,15 +251,18 @@ const CategoryList = ({ title, categories }) => (
       <div style={{ fontSize: '1.2rem' }}><p>No categories loaded.</p></div>
     ) : (
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', maxWidth: '900px' }}>
-        {categories.map(cat => (
-          <Link key={cat.id || cat.name} to={`/ranking/${cat.id}`} style={{ 
-            width: '160px', height: '160px', border: '2px solid #8b5cf6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
-            textDecoration: 'none', color: 'black', fontWeight: 'bold', borderRadius: '15px', backgroundColor: '#fff', fontSize: '1.1rem', boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
-          }}>
-            <span>{cat.name}</span>
-            <span style={{fontSize: '0.8rem', color: '#666', marginTop: '10px'}}>{cat.units_of_measurement || cat.units}</span>
-          </Link>
-        ))}
+        {categories.map(cat => {
+          const actualCatId = cat.categoryId || cat.category_id || cat.id;
+          return (
+            <Link key={actualCatId || cat.name} to={`/ranking/${actualCatId}`} style={{ 
+              width: '160px', height: '160px', border: '2px solid #8b5cf6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+              textDecoration: 'none', color: 'black', fontWeight: 'bold', borderRadius: '15px', backgroundColor: '#fff', fontSize: '1.1rem', boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
+            }}>
+              <span>{cat.name}</span>
+              <span style={{fontSize: '0.8rem', color: '#666', marginTop: '10px'}}>{cat.units || cat.units_of_measurement}</span>
+            </Link>
+          );
+        })}
       </div>
     )}
   </div>
@@ -272,16 +283,14 @@ const CreateCategory = ({ currentUser, setCategories }) => {
       const newCat = await createCategory({
         name: name,
         description: description,
-        unitsOfMeasurement: unit, 
-        tags: {}, 
-        sortOrder: better === 'large',
-        foundingUsername: currentUser.username,
-        founding_username: currentUser.username // Sending both just in case!
+        units: unit, 
+        tags: [], 
+        sort_order: better === 'large', 
+        founding_username: currentUser.username 
       });
       setCategories(prev => [...prev, newCat.category || newCat]); 
       navigate('/global');
     } catch (err) {
-      // This will now show the EXACT error message from Spring Boot!
       alert(`Backend rejected the category:\n\n${err.message}`);
     }
   };
@@ -308,56 +317,102 @@ const CreateCategory = ({ currentUser, setCategories }) => {
 // --- RANKING PAGE ---
 const RankingPage = ({ categories, currentUser }) => {
   const { categoryId } = useParams();
-  const catInfo = categories.find(c => c.id === categoryId) || { name: 'Loading...', units: '' };
+  
+  const catInfo = categories.find(c => 
+    String(c.categoryId || c.category_id || c.id) === String(categoryId)
+  ) || { name: 'Loading...', units: '' };
   
   const [globalScores, setGlobalScores] = useState([]);
   const [val, setVal] = useState("");
   const [gender, setGender] = useState("Male");
   const [region, setRegion] = useState("North America");
+  
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const fetchLeaderboard = async () => {
+    if (!categoryId || categoryId === 'undefined') return; 
+
     try {
       const data = await getTopScores(categoryId);
       const scoresArray = data.scores?.content || data.content || data.scores || [];
-      const formattedScores = scoresArray.map(s => ({
-        name: s.anonymous ? "Anonymous" : (s.user?.username || "Unknown"),
-        value: s.score
-      }));
+      
+      const formattedScores = scoresArray.map(s => {
+        let parsedTags = {};
+        if (typeof s.tags === 'string') {
+          try { parsedTags = JSON.parse(s.tags); } catch (e) {}
+        } else if (s.tags) {
+          parsedTags = s.tags;
+        }
+
+        console.log("Raw score data from backend:", s);
+
+        const isAnon = s.anonymous === true || s.isAnonymous === true || s.is_anonymous === true || String(s.anonymous) === 'true';
+        const actualUsername = s.username || s.userName || s.user_name || s.user?.username || s.user?.userName || "Unknown";
+
+        return {
+          userId: s.userId || s.user_id || s.user?.id || s.user?.userId || s.user?.user_id,
+          name: isAnon ? "Anonymous" : actualUsername,
+          value: s.score || s.score_value || s.scoreValue,
+          gender: parsedTags.Gender,
+          region: parsedTags.Region
+        };
+      });
       setGlobalScores(formattedScores);
+
+      if (currentUser) {
+        const currentUserId = String(currentUser.id || currentUser.userId || currentUser.user_id);
+        const alreadySubmitted = formattedScores.some(s => String(s.userId) === currentUserId);
+        setHasSubmitted(alreadySubmitted);
+      }
+
     } catch (err) {
       console.error("Failed to load leaderboard");
     }
   };
 
   useEffect(() => {
-    if (categoryId) fetchLeaderboard();
-  }, [categoryId]);
+    fetchLeaderboard();
+  }, [categoryId, currentUser]);
 
   const addEntry = async (e) => {
     e.preventDefault();
-    if (!val || !currentUser?.id) return alert("Error: User ID missing. Please log out and back in.");
+
+    if (hasSubmitted) return alert("You have already submitted a score for this category!");
+
+    const userId = currentUser?.id || currentUser?.userId || currentUser?.user_id;
+
+    if (!val || !userId) return alert("Error: User ID missing. Please log out and back in.");
+    if (!categoryId || categoryId === 'undefined') return alert("Error: Invalid Category ID. Please go back to the Global Categories page and click the category again.");
     
+    const userIsAnon = currentUser.isAnonymous || false;
+
     try {
       await submitScore({
-        user_id: currentUser.id,
+        user_id: userId,
         category_id: categoryId,
         score: parseFloat(val),
         tags: { "Gender": gender, "Region": region },
-        anonymous: currentUser.isAnonymous || false
+        anonymous: userIsAnon,
+        isAnonymous: userIsAnon,
+        is_anonymous: userIsAnon
       });
       setVal(""); 
+      setHasSubmitted(true); 
       fetchLeaderboard();
     } catch (err) {
       alert(`Failed to submit score: ${err.message}`);
     }
   };
 
+  const genderScores = globalScores.filter(s => s.gender === gender);
+  const regionScores = globalScores.filter(s => s.region === region);
+
   const renderTable = (title, statsToRender) => (
     <div key={title} style={{ width: '100%', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
       <h3 style={{ margin: '15px 0', fontSize: '1.4rem', color: '#8b5cf6' }}>{title} Table</h3>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1.1rem' }}>
         <thead style={{ position: 'sticky', top: 0, backgroundColor: '#8b5cf6', color: 'white', zIndex: 1 }}>
-          <tr><th style={{ padding: '12px' }}>Rank</th><th>{catInfo.units_of_measurement || catInfo.units || 'Score'}</th><th>Name</th></tr>
+          <tr><th style={{ padding: '12px' }}>Rank</th><th>{catInfo.units || catInfo.units_of_measurement || 'Score'}</th><th>Name</th></tr>
         </thead>
         <tbody>
           {statsToRender.length === 0 ? (
@@ -365,9 +420,13 @@ const RankingPage = ({ categories, currentUser }) => {
           ) : (
             statsToRender.map((stat, i) => (
               <tr key={i} style={{ backgroundColor: i < 3 ? '#fff9e6' : '#fff', borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px', fontWeight: i < 3 ? 'bold' : 'normal' }}>{i + 1}</td>
+                <td style={{ padding: '12px', fontWeight: i < 3 ? 'bold' : 'normal', fontSize: i < 3 ? '1.5rem' : '1rem' }}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                </td>
                 <td>{stat.value ?? "-"}</td>
-                <td style={{ fontWeight: i < 3 ? 'bold' : 'normal', fontStyle: stat.name === 'Anonymous' ? 'italic' : 'normal' }}>{stat.name ?? "-"}</td>
+                <td style={{ fontWeight: i < 3 ? 'bold' : 'normal', fontStyle: stat.name === 'Anonymous' ? 'italic' : 'normal', color: stat.name === 'Anonymous' ? '#888' : '#000' }}>
+                  {stat.name ?? "-"}
+                </td>
               </tr>
             ))
           )}
@@ -386,16 +445,36 @@ const RankingPage = ({ categories, currentUser }) => {
           <form onSubmit={addEntry} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', backgroundColor: '#fff', padding: '25px', borderRadius: '15px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
             <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Submit Your Stat</h3>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <input type="number" step="any" value={val} onChange={e => setVal(e.target.value)} placeholder="0" style={{ width: '100px', height: '60px', textAlign: 'center', border: '2px solid #8b5cf6', fontSize: '24px', borderRadius: '10px' }} required />
-              <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.units_of_measurement || catInfo.units}</span>
+              <input type="number" step="any" value={val} onChange={e => setVal(e.target.value)} placeholder="0" disabled={hasSubmitted} style={{ width: '100px', height: '60px', textAlign: 'center', border: '2px solid #8b5cf6', fontSize: '24px', borderRadius: '10px', backgroundColor: hasSubmitted ? '#f5f5f5' : 'white' }} required />
+              <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{catInfo.units || catInfo.units_of_measurement}</span>
             </div>
             <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={gender} onChange={e => setGender(e.target.value)}>
-              <option value="Male">Male</option><option value="Female">Female</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
             </select>
             <select style={{ ...inputStyle, marginBottom: '0', width: '220px' }} value={region} onChange={e => setRegion(e.target.value)}>
-              <option value="North America">North America</option><option value="Europe">Europe</option><option value="Asia">Asia</option>
+              <option value="North America">North America</option>
+              <option value="South America">South America</option>
+              <option value="Europe">Europe</option>
+              <option value="Asia">Asia</option>
+              <option value="Africa">Africa</option>
+              <option value="Australia/Oceania">Australia/Oceania</option>
+              <option value="Antarctica">Antarctica</option>
             </select>
-            <button type="submit" style={{ ...mainButtonStyle, width: '220px', fontSize: '1.1rem', backgroundColor: '#8b5cf6', color: 'white' }}>Add Entry</button>
+            <button 
+              type="submit" 
+              disabled={hasSubmitted}
+              style={{ 
+                ...mainButtonStyle, 
+                width: '220px', 
+                fontSize: '1.1rem', 
+                backgroundColor: hasSubmitted ? '#ccc' : '#8b5cf6', 
+                color: 'white',
+                cursor: hasSubmitted ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {hasSubmitted ? 'Already Submitted' : 'Add Entry'}
+            </button>
           </form>
         ) : (
            <p>Log in to submit a score.</p>
@@ -404,6 +483,8 @@ const RankingPage = ({ categories, currentUser }) => {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '25px', width: '100%', maxWidth: '1400px' }}>
         {renderTable('Global Top', globalScores)}
+        {renderTable(`${gender} Top`, genderScores)}
+        {renderTable(`${region} Top`, regionScores)}
       </div>
     </div>
   );
