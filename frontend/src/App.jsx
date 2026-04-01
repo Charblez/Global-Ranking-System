@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, Navigate } from 'react-router-dom';
 
-// --- API HELPERS ---
 const API_BASE_URL = '/api/v1';
 
 const createUser = async (userData) => {
@@ -61,7 +60,6 @@ const getTopScores = async (categoryId, page = 0, size = 25) => {
   return response.json();
 };
 
-// --- STYLES & LOCAL STORAGE HELPER ---
 const getStorage = (key, defaultValue) => {
   const saved = sessionStorage.getItem(key);
   return saved ? JSON.parse(saved) : defaultValue;
@@ -77,7 +75,6 @@ const mainButtonStyle = { padding: '15px 20px', cursor: 'pointer', borderRadius:
 const smallButtonStyle = { padding: '10px 18px', cursor: 'pointer', borderRadius: '6px', border: '2px solid #8b5cf6', backgroundColor: '#fff', fontSize: '1rem', fontWeight: 'bold', color: '#333', transition: '0.2s' };
 const funTitleStyle = { fontSize: '3.2rem', marginBottom: '40px', color: '#2c3e50', fontFamily: '"Comic Sans MS", "Chalkboard SE", "Marker Felt", cursive' };
 
-// --- MAIN APP ---
 export default function App() {
   const [categories, setCategories] = useState([]);
   const [currentUser, setCurrentUser] = useState(() => getStorage('currentUser', null));
@@ -111,7 +108,6 @@ export default function App() {
   );
 }
 
-// --- APP CONTENT ---
 const AppContent = ({ categories, setCategories, currentUser, setCurrentUser }) => {
   const navigate = useNavigate();
 
@@ -121,6 +117,19 @@ const AppContent = ({ categories, setCategories, currentUser, setCurrentUser }) 
     navigate('/login');
   };
 
+  const isCatLocal = (cat) => {
+    let t = [];
+    if (typeof cat.tags === 'string') {
+      try { t = JSON.parse(cat.tags); } catch (e) {}
+    } else if (Array.isArray(cat.tags)) {
+      t = cat.tags;
+    }
+    return t.includes('local');
+  };
+
+  const globalCategories = categories.filter(c => !isCatLocal(c));
+  const localCategories = categories.filter(c => isCatLocal(c));
+
   return (
     <>
       <div style={topNavStyle}>
@@ -129,6 +138,7 @@ const AppContent = ({ categories, setCategories, currentUser, setCurrentUser }) 
         </Link>
         <div style={navLinksStyle}>
           <Link to="/global"><button className="nav-button">Global Categories</button></Link>
+          <Link to="/local"><button className="nav-button">Local Categories</button></Link>
           {currentUser && <Link to="/profile"><button className="nav-button">Profile</button></Link>}
           {currentUser ? (
             <button onClick={logout} className="nav-button">Log out</button>
@@ -144,7 +154,8 @@ const AppContent = ({ categories, setCategories, currentUser, setCurrentUser }) 
         <Route path="/signup" element={currentUser ? <Navigate to="/" /> : <AuthPage mode="signup" setCurrentUser={setCurrentUser} />} />
         <Route path="/profile" element={currentUser ? <ProfilePage currentUser={currentUser} setCurrentUser={setCurrentUser} /> : <Navigate to="/login" />} />
         
-        <Route path="/global" element={<CategoryList title="Global Categories" categories={categories} />} />
+        <Route path="/global" element={<CategoryList title="Global Categories" categories={globalCategories} />} />
+        <Route path="/local" element={<CategoryList title="Local Categories" categories={localCategories} />} />
         <Route path="/create" element={currentUser ? <CreateCategory currentUser={currentUser} setCategories={setCategories} /> : <Navigate to="/login" />} />
         <Route path="/ranking/:categoryId" element={<RankingPage categories={categories} currentUser={currentUser} />} />
       </Routes>
@@ -152,18 +163,17 @@ const AppContent = ({ categories, setCategories, currentUser, setCurrentUser }) 
   );
 };
 
-// --- HOME PAGE ---
 const Home = () => (
   <div style={pageWrapperStyle}>
-    <h1 style={funTitleStyle}>Welcome to Statit</h1>
+    <h1 style={funTitleStyle}>Welcome to Statit!</h1>
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
       <Link to="/global"><button style={mainButtonStyle}>Global Categories</button></Link>
+      <Link to="/local"><button style={mainButtonStyle}>Local Categories</button></Link>
       <Link to="/create"><button style={mainButtonStyle}>Create Your Own</button></Link>
     </div>
   </div>
 );
 
-// --- PROFILE PAGE ---
 const ProfilePage = ({ currentUser, setCurrentUser }) => {
   return (
     <div style={pageWrapperStyle}>
@@ -177,7 +187,6 @@ const ProfilePage = ({ currentUser, setCurrentUser }) => {
   );
 };
 
-// --- LOGIN / SIGNUP PAGE ---
 const AuthPage = ({ mode, setCurrentUser }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -208,7 +217,7 @@ const AuthPage = ({ mode, setCurrentUser }) => {
 
   return (
     <div style={pageWrapperStyle}>
-      <h1 style={{ ...funTitleStyle, marginBottom: '10px' }}>Welcome to Statit</h1>
+      <h1 style={{ ...funTitleStyle, marginBottom: '10px' }}>Welcome to Statit!</h1>
       <h2 style={{ fontSize: '1.8rem', marginBottom: '40px', color: '#666' }}>{mode === 'login' ? 'Log in to continue' : 'Create an account'}</h2>
       <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#fff', padding: '40px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
         <input style={inputStyle} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} required />
@@ -229,7 +238,6 @@ const AuthPage = ({ mode, setCurrentUser }) => {
   );
 };
 
-// --- CATEGORY LIST PAGE ---
 const CategoryList = ({ title, categories }) => (
   <div style={pageWrapperStyle}>
     <Link to="/" style={backLinkStyle}>← Back to Main</Link>
@@ -255,7 +263,6 @@ const CategoryList = ({ title, categories }) => (
   </div>
 );
 
-// --- CREATE CATEGORY PAGE ---
 const CreateCategory = ({ currentUser, setCategories }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -271,12 +278,12 @@ const CreateCategory = ({ currentUser, setCategories }) => {
         name: name,
         description: description,
         units: unit, 
-        tags: [], 
+        tags: ["local"], 
         sort_order: better === 'large', 
         founding_username: currentUser.username 
       });
       setCategories(prev => [...prev, newCat.category || newCat]); 
-      navigate('/global');
+      navigate('/local');
     } catch (err) {
       alert(`Backend rejected the category:\n\n${err.message}`);
     }
@@ -290,20 +297,22 @@ const CreateCategory = ({ currentUser, setCategories }) => {
         <input style={inputStyle} placeholder="Category Name (e.g. Typing Speed)" value={name} onChange={e => setName(e.target.value)} required />
         <input style={inputStyle} placeholder="Description (optional)" value={description} onChange={e => setDescription(e.target.value)} />
         <input style={inputStyle} placeholder="Measurement Unit (e.g. WPM)" value={unit} onChange={e => setUnit(e.target.value)} required />
-        <div>
+        
+        <div style={{ margin: '10px 0' }}>
           <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>Which is better?</p>
           <button type="button" onClick={() => setBetter('large')} style={{ ...mainButtonStyle, width: 'auto', fontSize: '1rem', padding: '10px 15px', backgroundColor: better === 'large' ? '#8b5cf6' : '#fff', color: better === 'large' ? '#fff' : '#000' }}>Large Number</button>
           <button type="button" onClick={() => setBetter('small')} style={{ ...mainButtonStyle, width: 'auto', fontSize: '1rem', padding: '10px 15px', marginLeft: '10px', backgroundColor: better === 'small' ? '#8b5cf6' : '#fff', color: better === 'small' ? '#fff' : '#000' }}>Small Number</button>
         </div>
+
         <button type="submit" style={{ ...mainButtonStyle, width: '100%', backgroundColor: '#4CAF50', color: 'white', border: 'none' }}>Create Category</button>
       </form>
     </div>
   );
 };
 
-// --- RANKING PAGE ---
 const RankingPage = ({ categories, currentUser }) => {
   const { categoryId } = useParams();
+  const navigate = useNavigate();
   
   const catInfo = categories.find(c => 
     String(c.categoryId || c.category_id || c.id) === String(categoryId)
@@ -316,6 +325,7 @@ const RankingPage = ({ categories, currentUser }) => {
   
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isAnonForm, setIsAnonForm] = useState(false);
+  const [tableView, setTableView] = useState("Global");
 
   const fetchLeaderboard = async () => {
     if (!categoryId || categoryId === 'undefined') return; 
@@ -338,7 +348,7 @@ const RankingPage = ({ categories, currentUser }) => {
         return {
           userId: s.userId || s.user_id || s.user?.id || s.user?.userId || s.user?.user_id,
           name: isAnon ? "Anonymous" : actualUsername,
-          value: s.score ?? s.score_value ?? s.scoreValue, // Fixed: Used ?? instead of || to allow 0
+          value: s.score ?? s.score_value ?? s.scoreValue,
           gender: parsedTags.Gender,
           region: parsedTags.Region
         };
@@ -369,7 +379,7 @@ const RankingPage = ({ categories, currentUser }) => {
 
     if (val === "") return alert("Please enter a score.");
     if (!userId) return alert("Error: User ID missing. Please log out and back in.");
-    if (!categoryId || categoryId === 'undefined') return alert("Error: Invalid Category ID. Please go back to the Global Categories page and click the category again.");
+    if (!categoryId || categoryId === 'undefined') return alert("Error: Invalid Category ID. Please go back to the Categories page and click the category again.");
     
     const userIsAnon = isAnonForm;
 
@@ -397,7 +407,7 @@ const RankingPage = ({ categories, currentUser }) => {
 
   const renderTable = (title, statsToRender) => (
     <div key={title} style={{ width: '100%', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-      <h3 style={{ margin: '15px 0', fontSize: '1.4rem', color: '#8b5cf6' }}>{title} Table</h3>
+      <h3 style={{ margin: '15px 0', fontSize: '1.5rem', color: '#8b5cf6', textAlign: 'center' }}>{title}</h3>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1.1rem' }}>
         <thead style={{ position: 'sticky', top: 0, backgroundColor: '#8b5cf6', color: 'white', zIndex: 1 }}>
           <tr><th style={{ padding: '12px' }}>Rank</th><th>{catInfo.units || catInfo.units_of_measurement || 'Score'}</th><th>Name</th></tr>
@@ -434,7 +444,7 @@ const RankingPage = ({ categories, currentUser }) => {
 
   return (
     <div style={{ ...pageWrapperStyle, justifyContent: 'flex-start', paddingTop: '80px' }}>
-      <Link to="/global" style={backLinkStyle}>← Back</Link>
+      <span onClick={() => navigate(-1)} style={{ ...backLinkStyle, cursor: 'pointer' }}>← Back</span>
       <h2 style={{ textTransform: 'capitalize', fontSize: '2.5rem', marginBottom: '20px' }}>{catInfo.name} Rankings</h2>
       
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', justifyContent: 'center', marginBottom: '40px' }}>
@@ -485,11 +495,24 @@ const RankingPage = ({ categories, currentUser }) => {
         )}
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '25px', width: '100%', maxWidth: '1400px' }}>
-        {renderTable('Global Top', globalScores)}
-        {renderTable(`${gender} Top`, genderScores)}
-        {renderTable(`${region} Top`, regionScores)}
-        {renderTable(`${gender} in ${region} Top`, intersectionScores)}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '1400px' }}>
+        <select 
+          style={{ padding: '12px', fontSize: '1.1rem', borderRadius: '8px', marginBottom: '20px', border: '2px solid #8b5cf6', outline: 'none', cursor: 'pointer', width: '350px' }} 
+          value={tableView} 
+          onChange={e => setTableView(e.target.value)}
+        >
+          <option value="Global">Global Ranking</option>
+          <option value="Gender">{gender} Ranking</option>
+          <option value="Region">{region} Ranking</option>
+          <option value="Intersection">{gender} in {region} Ranking</option>
+        </select>
+
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          {tableView === 'Global' && renderTable('Global Ranking', globalScores)}
+          {tableView === 'Gender' && renderTable(`${gender} Ranking`, genderScores)}
+          {tableView === 'Region' && renderTable(`${region} Ranking`, regionScores)}
+          {tableView === 'Intersection' && renderTable(`${gender} in ${region} Ranking`, intersectionScores)}
+        </div>
       </div>
     </div>
   );
