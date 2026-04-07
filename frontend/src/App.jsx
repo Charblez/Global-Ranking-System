@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, Navigate } from 'react-router-dom';
 
+const API_BASE_URL = 'http://statit-backend-api.eastus.azurecontainer.io:8080/api/v1';
+
 // --- HELPERS ---
 const getStorage = (key, defaultValue) => {
   const saved = localStorage.getItem(key);
@@ -58,28 +60,31 @@ export default function App() {
     { name: "Health", better: "large", unit: "pts", type: "global" },
     { name: "Speed", better: "small", unit: "sec", type: "global" }
   ];
+  const [categories, setCategories] = useState(getStorage("categories", defaultPresets));
+  const [allStats, setAllStats] = useState(getStorage("allStats", {}));
+  const [users, setUsers] = useState(getStorage("users", []));
+  const [currentUser, setCurrentUser] = useState(getStorage("currentUser", null));
+  
+  const handleLogin = async (username, password) => {
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST', // We are sending data
+      headers: {
+        'Content-Type': 'application/json', // Telling the backend we are sending JSON
+      },
+      body: JSON.stringify({ username, password }) // The actual data
+    });
 
-  const [categories, setCategories] = useState(() => getStorage('categories', defaultPresets));
-  const [allStats, setAllStats] = useState(() => getStorage('allStats', {}));
-  const [users, setUsers] = useState(() => getStorage('users', []));
-  const [currentUser, setCurrentUser] = useState(null);
-
-  useEffect(() => {
-    localStorage.setItem('categories', JSON.stringify(categories));
-    localStorage.setItem('allStats', JSON.stringify(allStats));
-    localStorage.setItem('users', JSON.stringify(users));
-  }, [categories, allStats, users]);
-
-  return (
-    <Router>
-      <AppContent 
-        categories={categories} setCategories={setCategories}
-        allStats={allStats} setAllStats={setAllStats}
-        users={users} setUsers={setUsers}
-        currentUser={currentUser} setCurrentUser={setCurrentUser}
-      />
-    </Router>
-  );
+    if (response.ok) {
+      const userData = await response.json();
+      setCurrentUser(userData); // Log the user in on the frontend
+    } else {
+      alert("Invalid credentials!");
+    }
+  } catch (error) {
+    console.error("Login failed:", error);
+  }
+};
 }
 
 // --- APP CONTENT ---
