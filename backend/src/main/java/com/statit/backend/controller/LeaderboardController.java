@@ -19,9 +19,9 @@ import com.statit.backend.dto.ScoreFilterRequest;
 import com.statit.backend.model.Category;
 import com.statit.backend.model.GlobalBaseline;
 import com.statit.backend.model.Score;
-//import com.statit.backend.service.GlobalBaselineService;
 import com.statit.backend.service.CategoryService;
 import com.statit.backend.service.ScoreService;
+import com.statit.backend.repository.GlobalBaselineRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,10 +47,12 @@ public class LeaderboardController
     // Constructors
     //------------------------------------------------------------------------------------------------
     public LeaderboardController(ScoreService scoreService,
-                                 CategoryService categoryService)
+                                 CategoryService categoryService,
+                                 GlobalBaselineRepository globalBaselineRepository)
     {
         this.scoreService = scoreService;
         this.categoryService = categoryService;
+        this.globalBaselineRepository = globalBaselineRepository;
     }
 
     //------------------------------------------------------------------------------------------------
@@ -68,31 +70,6 @@ public class LeaderboardController
         return ResponseEntity.ok(response);
     }
 
-//    @GetMapping("/{categoryId}/snapshot")
-//    public ResponseEntity<LeaderboardSnapshotResponse> getLeaderboardSnapshot(@PathVariable UUID categoryId,
-//                                                                              @RequestParam(defaultValue = "0") int page,
-//                                                                              @RequestParam(defaultValue = "25") int size)
-//    {
-//        Category category = categoryService.getCategory(categoryId);
-//        Page<Score> scores = scoreService.getGlobalTopScores(categoryId, page, size);
-//        LeaderboardResponse leaderboardResponse = LeaderboardResponse.fromPage(category, scores);
-//
-//        List<GlobalBaseline> baselines = baselineManagementService.getBaselinesByCategory(categoryId);
-//        List<GlobalBaselineResponse> baselineResponses = new ArrayList<>();
-//        for(GlobalBaseline baseline : baselines)
-//        {
-//            baselineResponses.add(GlobalBaselineResponse.fromGlobalBaseline(baseline));
-//        }
-//
-//        LeaderboardSnapshotResponse response = new LeaderboardSnapshotResponse(
-//                categoryId,
-//                leaderboardResponse,
-//                baselineResponses
-//        );
-//
-//        return ResponseEntity.ok(response);
-//    }
-
     @PostMapping("/{categoryId}/filtered")
     public ResponseEntity<LeaderboardResponse> getFilteredTopScores(@PathVariable UUID categoryId,
                                                                     @RequestParam(defaultValue = "0") int page,
@@ -106,23 +83,50 @@ public class LeaderboardController
         return ResponseEntity.ok(response);
     }
 
-//    @GetMapping("/{categoryId}/baselines")
-//    public ResponseEntity<List<GlobalBaselineResponse>> getBaselineStats(@PathVariable UUID categoryId)
-//    {
-//        List<GlobalBaseline> baselines = baselineManagementService.getBaselinesByCategory(categoryId);
-//        List<GlobalBaselineResponse> responses = new ArrayList<>();
-//
-//        for(GlobalBaseline baseline : baselines)
-//        {
-//            responses.add(GlobalBaselineResponse.fromGlobalBaseline(baseline));
-//        }
-//
-//        return ResponseEntity.ok(responses);
-//    }
+    @GetMapping("/{categoryId}/snapshot")
+    public ResponseEntity<LeaderboardSnapshotResponse> getLeaderboardSnapshot(@PathVariable UUID categoryId,
+                                                                              @RequestParam(defaultValue = "0") int page,
+                                                                              @RequestParam(defaultValue = "25") int size)
+    {
+        Category category = categoryService.getCategory(categoryId);
+        Page<Score> scores = scoreService.getGlobalTopScores(categoryId, page, size);
+        LeaderboardResponse leaderboardResponse = LeaderboardResponse.fromPage(category, scores);
+
+        List<GlobalBaseline> baselines = globalBaselineRepository.findAllByCategory(category);
+        List<GlobalBaselineResponse> baselineResponses = new ArrayList<>();
+        for(GlobalBaseline baseline : baselines)
+        {
+            baselineResponses.add(GlobalBaselineResponse.fromGlobalBaseline(baseline));
+        }
+
+        LeaderboardSnapshotResponse response = new LeaderboardSnapshotResponse(
+                categoryId,
+                leaderboardResponse,
+                baselineResponses
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{categoryId}/baselines")
+    public ResponseEntity<List<GlobalBaselineResponse>> getBaselineStats(@PathVariable UUID categoryId)
+    {
+        Category category = categoryService.getCategory(categoryId);
+        List<GlobalBaseline> baselines = globalBaselineRepository.findAllByCategory(category);
+        List<GlobalBaselineResponse> responses = new ArrayList<>();
+
+        for(GlobalBaseline baseline : baselines)
+        {
+            responses.add(GlobalBaselineResponse.fromGlobalBaseline(baseline));
+        }
+
+        return ResponseEntity.ok(responses);
+    }
 
     //------------------------------------------------------------------------------------------------
     // Private Variables
     //------------------------------------------------------------------------------------------------
     private final ScoreService scoreService;
     private final CategoryService categoryService;
+    private final GlobalBaselineRepository globalBaselineRepository;
 }

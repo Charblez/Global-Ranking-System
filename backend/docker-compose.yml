@@ -1,35 +1,33 @@
-version: '3.8'
-
 services:
-  db:
-    image: postgres:15
+# Backend java container
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
-      POSTGRES_USER: statit_admin
-      POSTGRES_PASSWORD: testpassword
-      POSTGRES_DB: statit_db
+      - DB_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
+      - DB_USERNAME=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+
+# PostgreSQL database
+  db:
+    image: postgres:17-alpine
     ports:
       - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U statit_admin -d statit_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/statit_db
-      - SPRING_DATASOURCE_USERNAME=statit_admin
-      - SPRING_DATASOURCE_PASSWORD=testpassword
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_JPA_SHOW_SQL=true
-    depends_on:
-      db:
-        condition: service_healthy
-
 volumes:
-  postgres_data:
+  pgdata:

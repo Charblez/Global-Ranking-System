@@ -1,7 +1,7 @@
 /**
  * Filename: ScoreResponse.java
  * Author: Wilson Jimenez
- * Description: DTO for score submission responses.
+ * Description: DTO for score submission and retrieval responses.
  */
 
 //----------------------------------------------------------------------------------------------------
@@ -19,6 +19,10 @@ import java.util.UUID;
 // Record Definition
 //----------------------------------------------------------------------------------------------------
 public record ScoreResponse(UUID scoreId,
+                            UUID categoryId,
+                            String categoryName,
+                            UUID userId,
+                            String username,
                             Float score,
                             Map<String, String> tags,
                             Boolean anonymous,
@@ -29,6 +33,10 @@ public record ScoreResponse(UUID scoreId,
     {
         return new ScoreResponse(
                 score.getScoreId(),
+                score.getCategory().getCategoryId(),
+                score.getCategory().getName(),
+                score.getAnonymous() ? null : score.getUser().getUserId(),
+                score.getAnonymous() ? "Anonymous" : score.getUser().getUsername(),
                 score.getScore(),
                 score.getTags(),
                 score.getAnonymous(),
