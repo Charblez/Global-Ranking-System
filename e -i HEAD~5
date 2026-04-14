@@ -1,0 +1,59 @@
+[33ma9724ec[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32muser/Charblez/all/cleanup[m[33m)[m Merged all finalized files and added some new UI and API features. Branch will act is final buffer before staging to main
+[33me6fb9f6[m overhaul
+[33m67e666c[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m Fixed CategoryController and CategoryCreateRequest to use username rather than userid
+[33m19e51df[m Merge pull request #31 from Charblez/user/Charblez/backend/refactor
+[33mbf56192[m[33m ([m[1;31morigin/user/Charblez/backend/refactor[m[33m)[m Merge remote-tracking branch 'origin/dev' into user/Charblez/backend/refactor
+[33maef598a[m Merge pull request #30 from Charblez/backend/feature/model-controllers
+[33m5cbe2f3[m[33m ([m[1;31morigin/backend/feature/model-controllers[m[33m)[m Merge branch 'dev' into backend/feature/model-controllers
+[33madc307b[m Updated README with API endpoints
+[33m745a9e3[m Refactored file structure to use com.statit. Commented out BaselineManagementController stuff. Updated UserController to query by username instead of userId
+[33m8b1b470[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #29 from Charblez/user/WilsonJ99/backend/model-controllers
+[33ma3284bc[m Merge pull request #27 from Charblez/user/Charblez/backend/model-controllers
+[33mdf0ca03[m Added a new DTO to return top scores and baseline stats in one response.
+[33m9460831[m[33m ([m[1;31morigin/user/Charblez/backend/model-controllers[m[33m)[m Add CI pipeline with Github Actions
+[33m8d69de3[m Changed previous README to Architecture and wrote new README to define how to run the project
+[33ma28e050[m Added category and leaderboard controllers, along with corresponding DTOs
+[33m82912ca[m Wrote controller to expose user creation and viewing to api
+[33m271fbb9[m Merge pull request #25 from Charblez/backend/feature/model-services
+[33m81779be[m[33m ([m[1;31morigin/backend/feature/model-services[m[33m)[m Merge pull request #24 from Charblez/user/WilsonJ99/backend/model-services
+[33mdde3186[m[33m ([m[1;31morigin/user/WilsonJ99/backend/model-services[m[33m)[m Fixed some consistency issues and added unit tests
+[33mf5dd8de[m Merge pull request #23 from Charblez/user/WilsonJ99/backend/model-services
+[33maef06da[m Merge branch 'backend/feature/model-services' into user/WilsonJ99/backend/model-services
+[33mff683ef[m Merge pull request #22 from Charblez/user/Charblez/backend/model-services
+[33m0f8701d[m[33m ([m[1;31morigin/user/Charblez/backend/model-services[m[33m)[m Added DTOs for leaderboard responses and entries cleaner jsons when passing up to frontend
+[33m1a083a3[m Updated UserService and BaselineManagementService
+[33me31e943[m - Updated Model Repositories with more functionality - Updated Score and Category Services with more redundancy checking - Commented out `OwidHeightBaselineService` and all files in `stats` package due to annoyance and not being used at the moment - Propogated changes throughout project - Removed `TestDataController` and `PingController` due to absolescence
+[33m4e73e8b[m - Updated models to rely on tags rather than individual values. This allows for easier and more scalable filtering - Updated `ScoreService` to reflect model changes - Created `GlobalBaselineServce` for `GlobalBaseline` CRUD operations - Reflected all model changes to files that utilize them
+[33m65ce3f1[m Added navbar and logo to it.
+[33mb3dd316[m Fix typos and enhance descriptions in README
+[33m620e044[m Updated StatisticsService
+[33mcd1ed01[m Fixed indentation in Category.java. Changed jpa ddl-auto back to update
+[33m136c1da[m - Updated models to contain more useful data. 	- Added rejected field to scores 	- Added LMS, region, sex, min age months, and max age months to global baselines - Added functions to get users age in months and years - Added setters to models for quicker updates - Created `ScoreService` that: 	- Submits scores and updates the global baseline 	- Removes scores and updates the global baseline 	- Submission and removal only update if the users top score was affected
+[33m9100089[m Merge pull request #12 from Charblez/frontend_dev
+[33mf8c8106[m Beginning to set up height category
+[33mdede14e[m Moved buttons to correct top right
+[33m69884ab[m Changed database schema to include demographic data, removed DataCommonsService as it didn't provide useful functionality, removed API key from application.properties
+[33mb7b0f82[m Updated statistics controller
+[33m786bc8a[m Adding statistics service, controller, and summary DTO.
+[33m00bb541[m Fixed some README grammar and spelling mistakes
+[33mc25d9e2[m Updated README to show project scope and goals
+[33m03ef06a[m Merge branch 'dev' of https://github.com/Charblez/Global-Ranking-System into dev
+[33m1f95982[m add logo, update login/signup, fix app.jsx
+[33m522e1f3[m Fixed issues with jpa sql annotations. Modified docker-compose file to automatically spin up database. Backend now waits for database to run before starting
+[33m039b720[m Fix merge conflicts
+[33m163f196[m Added to frontend
+[33m87432a7[m Merge branch 'dev' of github.com:Charblez/Global-Ranking-System into dev
+[33me3a5c9c[m Created model classes and repositiories. Added docker files and dependencies
+[33m333d42c[m Added to the Readme again
+[33m1d469c3[m Merge branch 'dev' of github.com:Charblez/Global-Ranking-System into dev
+[33mdc80cd7[m Implemented simple backend frontend ping pong
+[33m2f47333[m Merge pull request #1 from Charblez/dev
+[33m08fea3c[m Merge branch 'main' into dev
+[33mef6a3b6[m Initial file structure again
+[33m3075e20[m Initial file structure
+[33m60d3874[m added index page
+[33mb5fb0a6[m edit redme
+[33mf8a51fe[m edit redme
+[33m8c531e0[m Testing
+[33m68cd1c2[m Added to README file
+[33m13f045d[m Initial commit
