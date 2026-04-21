@@ -13,6 +13,8 @@ export default function AuthPage({ mode, onLogin }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const signupDisabled = mode === 'signup' && (!region || !sex);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -104,9 +106,9 @@ export default function AuthPage({ mode, onLogin }) {
               </div>
 
               <div className="form-group">
-                <label>Region</label>
+                <label>Region <span style={{color:'red'}}>*</span></label>
                 <select className="input" value={region} onChange={(e) => setRegion(e.target.value)}>
-                  <option value="">Select region (optional)</option>
+                  <option value="">Select region</option>
                   <option value="North America">North America</option>
                   <option value="South America">South America</option>
                   <option value="Europe">Europe</option>
@@ -117,14 +119,20 @@ export default function AuthPage({ mode, onLogin }) {
               </div>
 
               <div className="form-group">
-                <label>Sex</label>
+                <label>Sex <span style={{color:'red'}}>*</span></label>
                 <select className="input" value={sex} onChange={(e) => setSex(e.target.value)}>
-                  <option value="">Select sex (optional)</option>
+                  <option value="">Select sex</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
+
+              {signupDisabled && (
+                <p style={{color:'red', fontSize:'0.85rem', marginBottom:'8px'}}>
+                  Please select both region and sex to continue.
+                </p>
+              )}
             </>
           )}
 
@@ -141,7 +149,7 @@ export default function AuthPage({ mode, onLogin }) {
             </div>
           )}
 
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading || signupDisabled}>
             {loading ? 'Please wait...' : mode === 'login' ? 'Log in' : 'Create account'}
           </button>
         </form>

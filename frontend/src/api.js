@@ -1,4 +1,5 @@
-const BASE = '/api/v1';
+//const BASE = '/api/v1';
+const BASE = 'https://statit-backend.bluemeadow-174af2a3.eastus.azurecontainerapps.io/api/v1';
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
