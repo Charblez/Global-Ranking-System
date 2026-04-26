@@ -262,6 +262,9 @@ export default function CategoryPage({ currentUser }) {
     .map((entry) => Number(entry.score))
     .filter((score) => Number.isFinite(score));
   const histogramBins = buildHistogram(chartValues);
+  const xAxisTicks = histogramBins.length > 0
+    ? [histogramBins[0].start, ...histogramBins.map((bin) => bin.end)]
+    : [];
   const chartMin = chartValues.length > 0 ? Math.min(...chartValues) : 0;
   const chartMax = chartValues.length > 0 ? Math.max(...chartValues) : 0;
   const maxBucketCount = histogramBins.reduce((max, bin) => Math.max(max, bin.count), 0);
@@ -409,12 +412,25 @@ export default function CategoryPage({ currentUser }) {
                     </g>
                   )}
 
-                  <text className="chart-axis-label" x={chartLeft} y="248" textAnchor="start">
-                    {formatCompactNumber(chartMin)}
-                  </text>
-                  <text className="chart-axis-label" x={chartRight} y="248" textAnchor="end">
-                    {formatCompactNumber(chartMax)}
-                  </text>
+                  {xAxisTicks.map((tick, index) => {
+                    const x = histogramBins.length === 1
+                      ? chartLeft + chartWidth / 2
+                      : chartLeft + (index / (xAxisTicks.length - 1)) * chartWidth;
+                    const textAnchor = index === 0
+                      ? 'start'
+                      : index === xAxisTicks.length - 1
+                        ? 'end'
+                        : 'middle';
+
+                    return (
+                      <g key={`${tick}-${index}`}>
+                        <line className="chart-tick" x1={x} y1={chartBaseY} x2={x} y2={chartBaseY + 5} />
+                        <text className="chart-axis-label" x={x} y="248" textAnchor={textAnchor}>
+                          {formatCompactNumber(tick)}
+                        </text>
+                      </g>
+                    );
+                  })}
                   <text className="chart-unit-label" x={(chartLeft + chartRight) / 2} y="270" textAnchor="middle">
                     {category.units}
                   </text>
