@@ -99,7 +99,7 @@ a { color: inherit; text-decoration: none; }
 /* --- Page Layout --- */
 .page {
   min-height: calc(100vh - 62px);
-  padding: 88px 24px 48px;
+  padding: 88px 24px 112px;
   max-width: 1280px;
   margin: 0 auto;
 }
@@ -175,6 +175,9 @@ a { color: inherit; text-decoration: none; }
 
 .category-layout .leaderboard-section {
   grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 @media (max-width: 900px) {
@@ -267,6 +270,119 @@ a { color: inherit; text-decoration: none; }
 .anonymous-name {
   font-style: italic;
   color: var(--text-muted);
+}
+
+/* --- Score Distribution Chart --- */
+.score-distribution-panel {
+  overflow: hidden;
+}
+
+.chart-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.chart-panel-header .panel-title {
+  margin-bottom: 2px;
+}
+
+.chart-subtitle {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.chart-count {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.chart-shell {
+  width: 100%;
+  overflow: hidden;
+}
+
+.score-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart-grid-line {
+  stroke: var(--border);
+  stroke-width: 1;
+  opacity: 0.8;
+}
+
+.chart-axis {
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.chart-bar {
+  fill: var(--accent-light);
+  opacity: 0.82;
+  transition: fill 0.15s, opacity 0.15s;
+}
+
+.chart-bar:hover {
+  fill: var(--accent);
+  opacity: 1;
+}
+
+.chart-axis-label,
+.chart-unit-label {
+  fill: var(--text-muted);
+  font-size: 12px;
+}
+
+.chart-unit-label {
+  font-weight: 700;
+}
+
+.you-marker-line {
+  stroke: #e11d48;
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+}
+
+.you-marker-dot {
+  fill: #e11d48;
+}
+
+.you-marker-label {
+  fill: #e11d48;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 560px) {
+  .chart-panel-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .chart-count {
+    width: fit-content;
+  }
 }
 
 /* --- Stats Panel --- */
@@ -401,7 +517,7 @@ select.input {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 24px;
+  padding: 88px 24px 112px;
 }
 
 .auth-card {
@@ -641,6 +757,12 @@ select.input {
 
 /* --- Footer --- */
 .footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  min-height: 64px;
   border-top: 1px solid var(--border);
   background: var(--card-bg);
   padding: 20px 24px;
