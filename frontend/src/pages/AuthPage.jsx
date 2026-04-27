@@ -13,7 +13,15 @@ export default function AuthPage({ mode, onLogin }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const signupDisabled = mode === 'signup' && (!region || !sex);
+  // Calculate today's date in local time for the max attribute
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const maxDate = `${year}-${month}-${day}`;
+
+  // Disable button if ANY field is missing
+  const signupDisabled = mode === 'signup' && (!username || !email || !password || !birthday || !region || !sex);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,12 +110,14 @@ export default function AuthPage({ mode, onLogin }) {
                   type="date"
                   value={birthday}
                   onChange={(e) => setBirthday(e.target.value)}
+                  required
+                  max={maxDate}
                 />
               </div>
 
               <div className="form-group">
-                <label>Region <span style={{color:'red'}}>*</span></label>
-                <select className="input" value={region} onChange={(e) => setRegion(e.target.value)}>
+                <label>Region</label>
+                <select className="input" value={region} onChange={(e) => setRegion(e.target.value)} required>
                   <option value="">Select region</option>
                   <option value="North America">North America</option>
                   <option value="South America">South America</option>
@@ -119,8 +129,8 @@ export default function AuthPage({ mode, onLogin }) {
               </div>
 
               <div className="form-group">
-                <label>Sex <span style={{color:'red'}}>*</span></label>
-                <select className="input" value={sex} onChange={(e) => setSex(e.target.value)}>
+                <label>Sex</label>
+                <select className="input" value={sex} onChange={(e) => setSex(e.target.value)} required>
                   <option value="">Select sex</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -130,7 +140,7 @@ export default function AuthPage({ mode, onLogin }) {
 
               {signupDisabled && (
                 <p style={{color:'red', fontSize:'0.85rem', marginBottom:'8px'}}>
-                  Please select both region and sex to continue.
+                  Please fill out all fields to continue.
                 </p>
               )}
             </>
@@ -145,6 +155,7 @@ export default function AuthPage({ mode, onLogin }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
+                required
               />
             </div>
           )}

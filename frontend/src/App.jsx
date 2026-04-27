@@ -6,7 +6,7 @@ import CreateCategoryPage from './pages/CreateCategoryPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
 
-function Header({ currentUser, onLogout }) {
+function Header({ currentUser, onLogout, darkMode, onToggleDark }) {
   const location = useLocation();
 
   const isActive = (path) => {
@@ -17,10 +17,20 @@ function Header({ currentUser, onLogout }) {
 
   return (
     <header className="header">
-      <Link to="/" className="header-logo">
-        <img src="/logo.webp" alt="Logo" />
-        <span>StatIt</span>
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <Link to="/" className="header-logo">
+          <img src="/logo.webp" alt="Logo" />
+          <span>StatIt</span>
+        </Link>
+        
+        {/* LIGHT/DARK TOGGLE MOVED TO HEADER */}
+        <label className="dark-toggle">
+          <span>{darkMode ? 'Dark' : 'Light'}</span>
+          <div className={`dark-toggle-track ${darkMode ? 'on' : ''}`} onClick={onToggleDark}>
+            <div className="dark-toggle-thumb" />
+          </div>
+        </label>
+      </div>
 
       <nav className="header-nav">
         <Link to="/" className={`nav-link ${isActive('/') && !isActive('/category') && !isActive('/create') && !isActive('/profile') ? 'active' : ''}`}>
@@ -34,7 +44,7 @@ function Header({ currentUser, onLogout }) {
         )}
 
         {currentUser ? (
-          <button className="nav-link" onClick={onLogout}>
+          <button className="nav-link" onClick={onLogout} style={{ fontWeight: 'normal' }}>
             Log out
           </button>
         ) : (
@@ -47,18 +57,12 @@ function Header({ currentUser, onLogout }) {
   );
 }
 
-function Footer({ darkMode, onToggleDark }) {
+function Footer() {
   return (
     <footer className="footer">
       <div className="footer-left">
-        <span>Global Ranking System</span>
+        <span>Statit</span>
       </div>
-      <label className="dark-toggle">
-        <span>{darkMode ? 'Dark' : 'Light'}</span>
-        <div className={`dark-toggle-track ${darkMode ? 'on' : ''}`} onClick={onToggleDark}>
-          <div className="dark-toggle-thumb" />
-        </div>
-      </label>
     </footer>
   );
 }
@@ -91,7 +95,7 @@ function AppContent() {
 
   return (
     <>
-      <Header currentUser={currentUser} onLogout={handleLogout} />
+      <Header currentUser={currentUser} onLogout={handleLogout} darkMode={darkMode} onToggleDark={toggleDark} />
 
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -102,7 +106,7 @@ function AppContent() {
         <Route path="/signup" element={currentUser ? <Navigate to="/" /> : <AuthPage mode="signup" onLogin={handleLogin} />} />
       </Routes>
 
-      <Footer darkMode={darkMode} onToggleDark={toggleDark} />
+      <Footer />
     </>
   );
 }
