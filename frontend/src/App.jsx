@@ -44,7 +44,7 @@ function Header({ currentUser, onLogout, darkMode, onToggleDark }) {
         )}
 
         {currentUser ? (
-          <button className="nav-link" onClick={onLogout} style={{ fontWeight: 'normal' }}>
+          <button className="nav-link" type="button" onClick={onLogout}>
             Log out
           </button>
         ) : (
@@ -70,7 +70,10 @@ function Footer() {
 function AppContent() {
   const navigate = useNavigate();
 
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('currentUser');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
@@ -88,6 +91,7 @@ function AppContent() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    localStorage.removeItem('currentUser');
     navigate('/login');
   };
 
@@ -95,7 +99,7 @@ function AppContent() {
 
   return (
     <>
-      <Header currentUser={currentUser} onLogout={handleLogout} darkMode={darkMode} onToggleDark={toggleDark} />
+      <Header currentUser={currentUser} onLogout={handleLogout} />
 
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -106,8 +110,16 @@ function AppContent() {
         <Route path="/signup" element={currentUser ? <Navigate to="/" /> : <AuthPage mode="signup" onLogin={handleLogin} />} />
       </Routes>
 
-      <Footer />
+      <Footer darkMode={darkMode} onToggleDark={toggleDark} />
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 
