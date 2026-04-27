@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import CategoryPage from './pages/CategoryPage';
 import CreateCategoryPage from './pages/CreateCategoryPage';
@@ -63,11 +63,10 @@ function Footer({ darkMode, onToggleDark }) {
   );
 }
 
-export default function App() {
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('currentUser');
-    return saved ? JSON.parse(saved) : null;
-  });
+function AppContent() {
+  const navigate = useNavigate();
+
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
@@ -81,18 +80,17 @@ export default function App() {
 
   const handleLogin = (userData) => {
     setCurrentUser(userData);
-    localStorage.setItem('currentUser', JSON.stringify(userData));
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('currentUser');
+    navigate('/login');
   };
 
   const toggleDark = () => setDarkMode((prev) => !prev);
 
   return (
-    <BrowserRouter>
+    <>
       <Header currentUser={currentUser} onLogout={handleLogout} />
 
       <Routes>
@@ -105,6 +103,14 @@ export default function App() {
       </Routes>
 
       <Footer darkMode={darkMode} onToggleDark={toggleDark} />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }

@@ -3,15 +3,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getCategories } from '../api';
 
 export default function HomePage() {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState(() => {
+    const cached = sessionStorage.getItem('categoriesCache');
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [loading, setLoading] = useState(() => !sessionStorage.getItem('categoriesCache'));
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     getCategories(0, 100)
       .then((data) => {
-        setCategories(data.categories || []);
+        const list = data.categories || [];
+        setCategories(list);
+        sessionStorage.setItem('categoriesCache', JSON.stringify(list));
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
