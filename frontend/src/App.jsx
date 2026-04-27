@@ -34,7 +34,7 @@ function Header({ currentUser, onLogout }) {
         )}
 
         {currentUser ? (
-          <button className="nav-link" onClick={onLogout}>
+          <button className="nav-link" type="button" onClick={onLogout}>
             Log out
           </button>
         ) : (
