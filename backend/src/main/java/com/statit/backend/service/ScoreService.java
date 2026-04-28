@@ -1,7 +1,7 @@
 /**
  * Filename: ScoreService.java
  * Author: Charles Bassani
- * Description: Handles CRUD operations for scores and updates global baselines
+ * Description: Handles CRUD operations for scores, updates global baselines, and computes ranking statistics.
  */
 
 //----------------------------------------------------------------------------------------------------
@@ -12,6 +12,7 @@ package com.statit.backend.service;
 //----------------------------------------------------------------------------------------------------
 // Imports
 //----------------------------------------------------------------------------------------------------
+import com.statit.backend.dto.ScoreInfoResponse;
 import com.statit.backend.model.Category;
 import com.statit.backend.model.GlobalBaseline;
 import com.statit.backend.model.Score;
@@ -20,8 +21,8 @@ import com.statit.backend.repository.CategoryRepository;
 import com.statit.backend.repository.GlobalBaselineRepository;
 import com.statit.backend.repository.ScoreRepository;
 import com.statit.backend.repository.UserRepository;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -56,9 +57,13 @@ public class ScoreService
     // Public Methods
     //------------------------------------------------------------------------------------------------
     @Transactional
-    public Score submitScore(UUID userId, UUID categoryId, Float scoreValue, Map<String, String> scoreTags, Boolean isAnonymous) {
-
+    public Score submitScore(UUID userId, UUID categoryId, Float scoreValue, Map<String, String> scoreTags, Boolean isAnonymous)
+    {
         //Fetch the user and category
+        if (scoreValue != null && (scoreValue < 0 || scoreValue > 999999999999f)) {
+            throw new IllegalArgumentException("Score must be between 0 and 999,999,999,999.");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
         Category category = categoryRepository.findById(categoryId)
@@ -68,8 +73,8 @@ public class ScoreService
 
         //JSONB tags merge
         Map<String, String> finalTags = new HashMap<>();
-        if (scoreTags != null) finalTags.putAll(scoreTags);
-        if (user.getDemographics() != null) finalTags.putAll(user.getDemographics());
+        if(scoreTags != null) finalTags.putAll(scoreTags);
+        if(user.getDemographics() != null) finalTags.putAll(user.getDemographics());
         finalTags.put("age_months", String.valueOf(user.getAgeMonths()));
         finalTags.put("age_years", String.valueOf(user.getAgeYears()));
 
@@ -84,12 +89,10 @@ public class ScoreService
         //Update the global baseline
         if(previousTopScore == null)
         {
-            //User has no score in specified category
             updateGlobalBaseline(category, newTopScore.getScore(), false);
         }
         else if(!previousTopScore.getScoreId().equals(newTopScore.getScoreId()))
         {
-            //User set a new score, remove old and add new
             updateGlobalBaseline(category, previousTopScore.getScore(), true);
             updateGlobalBaseline(category, newTopScore.getScore(), false);
         }
@@ -97,12 +100,17 @@ public class ScoreService
         return newScore;
     }
 
+    public Score getScore(UUID scoreId)
+    {
+        return scoreRepository.findById(scoreId)
+                .orElseThrow(() -> new IllegalArgumentException("Score not found."));
+    }
+
     @Transactional
     public void deleteScore(UUID scoreId)
     {
         Score scoreToDelete = scoreRepository.findById(scoreId)
                 .orElseThrow(() -> new IllegalArgumentException("Score not found."));
-
 
         Category category = scoreToDelete.getCategory();
         User user = scoreToDelete.getUser();
@@ -120,13 +128,9 @@ public class ScoreService
         //Update the global baseline
         if(wasTopScore)
         {
-            //Remove the old score
             updateGlobalBaseline(category, scoreToDelete.getScore(), true);
 
-            //Find new top score
             Score fallbackTopScore = getTopScoreForUser(category, user).orElse(null);
-
-            //Update the baseline
             if(fallbackTopScore != null)
             {
                 updateGlobalBaseline(category, fallbackTopScore.getScore(), false);
@@ -156,9 +160,7 @@ public class ScoreService
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found."));
 
-        // Serialize the filter tags to JSON for Postgres JSONB @> operator
         String tagsJson = serializeTagsToJson(tags);
-
         Pageable pageable = PageRequest.of(page, size);
 
         if(category.getSortOrder())
@@ -171,10 +173,119 @@ public class ScoreService
         }
     }
 
+    public Page<Score> getUserScores(String username, int page, int size)
+    {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
+        Pageable pageable = PageRequest.of(page, size);
+        return scoreRepository.findByUserOrderBySubmittedAtDesc(user, pageable);
+    }
+
+    public ScoreInfoResponse getScoreInfo(UUID scoreId)
+    {
+        Score score = scoreRepository.findById(scoreId)
+                .orElseThrow(() -> new IllegalArgumentException("Score not found."));
+
+        Category category = score.getCategory();
+        User user = score.getUser();
+
+        //Find the user's top score in this category to determine rank
+        Score topScore = getTopScoreForUser(category, user).orElse(score);
+
+        //Get rank by counting how many users have a better top score
+        int rank = computeRank(category, topScore.getScore());
+        long totalParticipants = scoreRepository.countDistinctUsersByCategoryAndRejectedFalse(category.getCategoryId());
+
+        //Get baseline stats for percentile calculation
+        GlobalBaseline baseline = globalBaselineRepository.findByCategory(category).orElse(null);
+
+        Double percentile = null;
+        Double zScore = null;
+        Float baselineMean = null;
+        Float baselineStdDev = null;
+        Integer baselineSampleSize = null;
+
+        if(baseline != null)
+        {
+            baselineMean = baseline.getMean();
+            baselineStdDev = baseline.getStandardDeviation();
+            baselineSampleSize = baseline.getSampleSize();
+
+            if(baselineMean != null && baselineStdDev != null && baselineStdDev > 0)
+            {
+                zScore = (score.getScore().doubleValue() - baselineMean.doubleValue()) / baselineStdDev.doubleValue();
+                double cdf = normalCdf(zScore);
+
+                //For descending categories (higher is better), percentile = CDF * 100
+                //For ascending categories (lower is better), percentile = (1 - CDF) * 100
+                if(category.getSortOrder())
+                {
+                    percentile = cdf * 100.0;
+                }
+                else
+                {
+                    percentile = (1.0 - cdf) * 100.0;
+                }
+            }
+            else if(baselineSampleSize != null && baselineSampleSize > 0)
+            {
+                //If stddev is 0, everyone has the same score
+                if(baselineMean != null && Float.compare(score.getScore(), baselineMean) == 0)
+                {
+                    percentile = 50.0;
+                }
+                else if(baselineMean != null && category.getSortOrder())
+                {
+                    percentile = score.getScore() > baselineMean ? 100.0 : 0.0;
+                }
+                else if(baselineMean != null)
+                {
+                    percentile = score.getScore() < baselineMean ? 100.0 : 0.0;
+                }
+            }
+        }
+
+        return new ScoreInfoResponse(
+                score.getScoreId(),
+                score.getScore(),
+                category.getName(),
+                category.getCategoryId(),
+                category.getUnits(),
+                score.getAnonymous() ? "Anonymous" : user.getUsername(),
+                score.getAnonymous() ? null : user.getUserId(),
+                score.getAnonymous(),
+                score.getTags(),
+                score.getSubmittedAt(),
+                rank,
+                totalParticipants,
+                percentile,
+                zScore,
+                baselineMean,
+                baselineStdDev,
+                baselineSampleSize
+        );
+    }
 
     //------------------------------------------------------------------------------------------------
     // Private Methods
     //------------------------------------------------------------------------------------------------
+    private int computeRank(Category category, Float scoreValue)
+    {
+        if(category.getSortOrder())
+        {
+            //Descending: count users with a better (higher) top score + 1
+            long betterCount = scoreRepository.countUsersWithBetterScoreDesc(category.getCategoryId(), scoreValue);
+            return (int) betterCount + 1;
+        }
+        else
+        {
+            //Ascending: count users with a better (lower) top score + 1
+            long betterCount = scoreRepository.countUsersWithBetterScoreAsc(category.getCategoryId(), scoreValue);
+            return (int) betterCount + 1;
+        }
+    }
+
     private void updateGlobalBaseline(Category category, Float score, Boolean removal)
     {
         //Fetch existing baseline
@@ -202,36 +313,23 @@ public class ScoreService
         {
             if(newN == 0)
             {
-                //No entries, no mean or std dev
                 newMean = 0.0f;
                 newStdDev = 0.0f;
             }
             else if(newN == 1)
             {
-                //1 Entry, update mean, no std dev
                 newMean = (oldMean * oldN - score) / newN;
                 newStdDev = 0.0f;
             }
             else
             {
-                //Find new mean
                 newMean = ((oldMean * oldN) - score) / newN;
-
-                //Get old variance
                 float oldVariance = oldStdDev * oldStdDev;
-
-                //Get sum squared difference
                 float oldM2 = oldVariance * (oldN - 1);
-
-                //Find new sum squared difference
                 float newM2 = oldM2 - ((score - oldMean) * (score - newMean));
-
-                //Ensure no negative
                 newM2 = Math.max(0.0f, newM2);
-
-                //Find new std dev
                 float newVariance = newM2 / (newN - 1);
-                newStdDev = (float)Math.sqrt(newVariance);
+                newStdDev = (float) Math.sqrt(newVariance);
             }
         }
         else
@@ -243,19 +341,10 @@ public class ScoreService
             }
             else
             {
-                //Find new mean
                 newMean = oldMean + ((score - oldMean) / newN);
-
-                //Find old variance
                 float oldVariance = oldStdDev * oldStdDev;
-
-                //Find old sum squared difference
                 float oldM2 = oldVariance * (oldN - 1);
-
-                //Find new sum squared difference
                 float newM2 = oldM2 + ((score - oldMean) * (score - newMean));
-
-                //Calculate new std dev
                 float newVariance = newM2 / (newN - 1);
                 newStdDev = (float) Math.sqrt(newVariance);
             }
@@ -266,7 +355,6 @@ public class ScoreService
         baseline.setStandardDeviation(newStdDev);
         baseline.setSampleSize(newN);
 
-        //Save record
         globalBaselineRepository.save(baseline);
     }
 
@@ -293,6 +381,32 @@ public class ScoreService
         {
             throw new IllegalArgumentException("Failed to serialize tags to JSON.", e);
         }
+    }
+
+    /**
+     * Approximates the cumulative distribution function (CDF) of the standard normal distribution.
+     * Uses the Abramowitz and Stegun error function approximation.
+     */
+    private double normalCdf(double z)
+    {
+        return 0.5 * (1.0 + erf(z / Math.sqrt(2.0)));
+    }
+
+    private double erf(double value)
+    {
+        double sign = value < 0 ? -1.0 : 1.0;
+        double x = Math.abs(value);
+
+        double a1 = 0.254829592;
+        double a2 = -0.284496736;
+        double a3 = 1.421413741;
+        double a4 = -1.453152027;
+        double a5 = 1.061405429;
+        double p = 0.3275911;
+
+        double t = 1.0 / (1.0 + p * x);
+        double y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+        return sign * y;
     }
 
     //------------------------------------------------------------------------------------------------

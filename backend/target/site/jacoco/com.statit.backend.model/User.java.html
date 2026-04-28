@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>User.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">springboot-program</a> &gt; <a href="index.source.html" class="el_package">com.statit.backend.model</a> &gt; <span class="el_source">User.java</span></div><h1>User.java</h1><pre class="source lang-java linenums">/**
+ * Filename: User.java
+ * Author: Charles Bassani
+ * Description: User DTO and model, utilizing JSONB for dynamic demographics.
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
+package com.statit.backend.model;
+
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
+import jakarta.persistence.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+//----------------------------------------------------------------------------------------------------
+// Class Definition
+//----------------------------------------------------------------------------------------------------
+@Entity
+@Table(name = &quot;users&quot;)
+public class User
+{
+    //------------------------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------------------------
+<span class="fc" id="L37">    public User() {}</span>
+
+    public User(String username,
+                String email,
+                String passwordHash,
+                LocalDate birthday,
+                Map&lt;String, String&gt; demographics)
+<span class="fc" id="L44">    {</span>
+<span class="fc" id="L45">        this.username = username;</span>
+<span class="fc" id="L46">        this.email = email;</span>
+<span class="fc" id="L47">        this.passwordHash = passwordHash;</span>
+<span class="fc" id="L48">        this.birthday = birthday;</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        this.demographics = demographics != null ? demographics : new HashMap&lt;&gt;();</span>
+<span class="fc" id="L50">    }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Public Functions
+    //------------------------------------------------------------------------------------------------
+    public void update(String username,
+                       String email,
+                       String passwordHash,
+                       LocalDate birthday,
+                       Map&lt;String, String&gt; demographics)
+    {
+<span class="fc" id="L61">        this.username = username;</span>
+<span class="fc" id="L62">        this.email = email;</span>
+<span class="fc" id="L63">        this.passwordHash = passwordHash;</span>
+<span class="fc" id="L64">        this.birthday = birthday;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        this.demographics = demographics != null ? demographics : new HashMap&lt;&gt;();</span>
+<span class="fc" id="L66">    }</span>
+
+    //Age calculations
+    public Integer getAgeMonths()
+    {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (birthday == null) return 0;</span>
+<span class="fc" id="L72">        return (int)ChronoUnit.MONTHS.between(birthday, LocalDate.now());</span>
+    }
+    public Integer getAgeYears()
+    {
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (birthday == null) return 0;</span>
+<span class="fc" id="L77">        return (int)ChronoUnit.YEARS.between(birthday, LocalDate.now());</span>
+    }
+
+    //Getters
+<span class="fc" id="L81">    public UUID getUserId()                      { return userId; }</span>
+<span class="fc" id="L82">    public String getUsername()                  { return username; }</span>
+<span class="fc" id="L83">    public String getEmail()                     { return email; }</span>
+<span class="fc" id="L84">    public String getPasswordHash()              { return passwordHash; }</span>
+<span class="fc" id="L85">    public LocalDateTime getCreatedAt()          { return createdAt; }</span>
+<span class="fc" id="L86">    public LocalDate getBirthday()               { return birthday; }</span>
+<span class="fc" id="L87">    public Map&lt;String, String&gt; getDemographics() { return demographics; }</span>
+
+    //Setters
+<span class="fc" id="L90">    public void setUsername(String username)                        { this.username = username; }</span>
+<span class="fc" id="L91">    public void setEmail(String email)                              { this.email = email; }</span>
+<span class="fc" id="L92">    public void setPasswordHash(String passwordHash)                { this.passwordHash = passwordHash; }</span>
+<span class="fc" id="L93">    public void setBirthday(LocalDate birthday)                     { this.birthday = birthday; }</span>
+<span class="fc" id="L94">    public void setDemographics(Map&lt;String, String&gt; demographics)   { this.demographics = demographics; }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Private Variables
+    //------------------------------------------------------------------------------------------------
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = &quot;user_id&quot;)
+    private UUID userId;
+
+    @Column(name = &quot;username&quot;, unique = true, nullable = false, length = 50)
+    private String username;
+
+    @Column(name = &quot;email&quot;, unique = true, nullable = false)
+    private String email;
+
+    @Column(name = &quot;password_hash&quot;, nullable = false, length = 255)
+    private String passwordHash;
+
+    @CreationTimestamp
+    @Column(name = &quot;created_at&quot;, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = &quot;birthday&quot;)
+    private LocalDate birthday;
+
+    // This is the Postgres JSONB magic
+<span class="fc" id="L121">    @JdbcTypeCode(SqlTypes.JSON)</span>
+    @Column(name = &quot;demographics&quot;, columnDefinition = &quot;jsonb&quot;)
+    private Map&lt;String, String&gt; demographics = new HashMap&lt;&gt;();
+};
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

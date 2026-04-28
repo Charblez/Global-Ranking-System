@@ -78,6 +78,32 @@ public interface ScoreRepository extends JpaRepository<Score, UUID>
     Page<Score> findTopScoresPerUserAsc(@Param("categoryId") UUID categoryId, Pageable pageable);
 
     //------------------------------------------------------------------------------------------------
+    // Rank Computation Queries
+    //------------------------------------------------------------------------------------------------
+    @Query(value = "SELECT COUNT(DISTINCT s.user_id) FROM scores s " +
+            "WHERE s.category_id = :categoryId AND s.rejected = false",
+            nativeQuery = true)
+    long countDistinctUsersByCategoryAndRejectedFalse(@Param("categoryId") UUID categoryId);
+
+    @Query(value = "SELECT COUNT(*) FROM (" +
+            "SELECT DISTINCT ON (s.user_id) s.score_value FROM scores s " +
+            "WHERE s.category_id = :categoryId AND s.rejected = false " +
+            "ORDER BY s.user_id, s.score_value DESC" +
+            ") best WHERE best.score_value > :scoreValue",
+            nativeQuery = true)
+    long countUsersWithBetterScoreDesc(@Param("categoryId") UUID categoryId,
+                                       @Param("scoreValue") Float scoreValue);
+
+    @Query(value = "SELECT COUNT(*) FROM (" +
+            "SELECT DISTINCT ON (s.user_id) s.score_value FROM scores s " +
+            "WHERE s.category_id = :categoryId AND s.rejected = false " +
+            "ORDER BY s.user_id, s.score_value ASC" +
+            ") best WHERE best.score_value < :scoreValue",
+            nativeQuery = true)
+    long countUsersWithBetterScoreAsc(@Param("categoryId") UUID categoryId,
+                                      @Param("scoreValue") Float scoreValue);
+
+    //------------------------------------------------------------------------------------------------
     // Filtered Leaderboards
     //------------------------------------------------------------------------------------------------
     @Query(value = "SELECT * FROM (" +

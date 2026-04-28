@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoryController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">springboot-program</a> &gt; <a href="index.source.html" class="el_package">com.statit.backend.controller</a> &gt; <span class="el_source">CategoryController.java</span></div><h1>CategoryController.java</h1><pre class="source lang-java linenums">/**
+ * Filename: CategoryController.java
+ * Author: Wilson Jimenez
+ * Description: API controller for category CRUD operations.
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
+package com.statit.backend.controller;
+
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
+import com.statit.backend.dto.CategoryCreateRequest;
+import com.statit.backend.dto.CategoryListResponse;
+import com.statit.backend.dto.CategoryResponse;
+import com.statit.backend.model.Category;
+import com.statit.backend.model.User;
+import com.statit.backend.service.CategoryService;
+import com.statit.backend.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+//----------------------------------------------------------------------------------------------------
+// Class Definition
+//----------------------------------------------------------------------------------------------------
+@RestController
+@RequestMapping(&quot;/api/v1/categories&quot;)
+public class CategoryController
+{
+    //------------------------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------------------------
+    public CategoryController(CategoryService categoryService,
+                              UserService userService)
+<span class="fc" id="L44">    {</span>
+<span class="fc" id="L45">        this.categoryService = categoryService;</span>
+<span class="fc" id="L46">        this.userService = userService;</span>
+<span class="fc" id="L47">    }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Public Methods
+    //------------------------------------------------------------------------------------------------
+    @PostMapping
+    public ResponseEntity&lt;CategoryResponse&gt; createCategory(@RequestBody CategoryCreateRequest request)
+    {
+<span class="fc" id="L55">        User foundingUser = userService.getUser(request.foundingUsername());</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        List&lt;String&gt; tags = request.tags() != null ? request.tags() : new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L58">        Category category = categoryService.createCategory(</span>
+<span class="fc" id="L59">                request.name(),</span>
+<span class="fc" id="L60">                request.description(),</span>
+<span class="fc" id="L61">                request.units(),</span>
+                tags,
+<span class="fc" id="L63">                request.sortOrder(),</span>
+                foundingUser
+        );
+
+<span class="fc" id="L67">        CategoryResponse response = CategoryResponse.fromCategory(category, &quot;Category created successfully&quot;);</span>
+<span class="fc" id="L68">        return ResponseEntity.ok(response);</span>
+    }
+
+    @GetMapping(&quot;/{categoryId}&quot;)
+    public ResponseEntity&lt;CategoryResponse&gt; getCategory(@PathVariable UUID categoryId)
+    {
+<span class="fc" id="L74">        Category category = categoryService.getCategory(categoryId);</span>
+<span class="fc" id="L75">        CategoryResponse response = CategoryResponse.fromCategory(category, null);</span>
+<span class="fc" id="L76">        return ResponseEntity.ok(response);</span>
+    }
+
+    @GetMapping
+    public ResponseEntity&lt;CategoryListResponse&gt; getAllCategories(@RequestParam(defaultValue = &quot;0&quot;) int page,
+                                                                 @RequestParam(defaultValue = &quot;25&quot;) int size)
+    {
+<span class="fc" id="L83">        Pageable pageable = PageRequest.of(page, size);</span>
+<span class="fc" id="L84">        Page&lt;Category&gt; categoryPage = categoryService.getAllCategories(pageable);</span>
+
+<span class="fc" id="L86">        List&lt;CategoryResponse&gt; categories = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        for(Category category : categoryPage.getContent())</span>
+        {
+<span class="fc" id="L89">            categories.add(CategoryResponse.fromCategory(category, null));</span>
+<span class="fc" id="L90">        }</span>
+
+<span class="fc" id="L92">        CategoryListResponse response = new CategoryListResponse(</span>
+                categories,
+<span class="fc" id="L94">                categoryPage.getNumber(),</span>
+<span class="fc" id="L95">                categoryPage.getTotalPages(),</span>
+<span class="fc" id="L96">                categoryPage.getTotalElements()</span>
+        );
+
+<span class="fc" id="L99">        return ResponseEntity.ok(response);</span>
+    }
+
+    @PutMapping(&quot;/{categoryId}&quot;)
+    public ResponseEntity&lt;CategoryResponse&gt; updateCategory(@PathVariable UUID categoryId,
+                                                           @RequestBody CategoryCreateRequest request)
+    {
+<span class="fc" id="L106">        Category updated = categoryService.updateCategory(</span>
+                categoryId,
+<span class="fc" id="L108">                request.name(),</span>
+<span class="fc" id="L109">                request.description(),</span>
+<span class="fc" id="L110">                request.tags(),</span>
+<span class="fc" id="L111">                request.units(),</span>
+<span class="fc" id="L112">                request.sortOrder()</span>
+        );
+
+<span class="fc" id="L115">        CategoryResponse response = CategoryResponse.fromCategory(updated, &quot;Category updated successfully&quot;);</span>
+<span class="fc" id="L116">        return ResponseEntity.ok(response);</span>
+    }
+
+    @DeleteMapping(&quot;/{categoryId}&quot;)
+    public ResponseEntity&lt;CategoryResponse&gt; deleteCategory(@PathVariable UUID categoryId)
+    {
+<span class="fc" id="L122">        Category category = categoryService.getCategory(categoryId);</span>
+<span class="fc" id="L123">        String name = category.getName();</span>
+<span class="fc" id="L124">        categoryService.deleteCategory(categoryId);</span>
+
+<span class="fc" id="L126">        return ResponseEntity.ok(new CategoryResponse(</span>
+                categoryId, name, null, null, null, null, null,
+                &quot;Category deleted successfully&quot;
+        ));
+    }
+
+    //------------------------------------------------------------------------------------------------
+    // Private Variables
+    //------------------------------------------------------------------------------------------------
+    private final CategoryService categoryService;
+    private final UserService userService;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

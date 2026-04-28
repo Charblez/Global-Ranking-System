@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoryService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">springboot-program</a> &gt; <a href="index.source.html" class="el_package">com.statit.backend.service</a> &gt; <span class="el_source">CategoryService.java</span></div><h1>CategoryService.java</h1><pre class="source lang-java linenums">/**
+ * Filename: CategoryService.java
+ * Author: Charles Bassani
+ * Description: Handles CRUD operations for Categories
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
+package com.statit.backend.service;
+
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
+import com.statit.backend.model.Category;
+import com.statit.backend.model.GlobalBaseline;
+import com.statit.backend.model.User;
+import com.statit.backend.repository.CategoryRepository;
+import com.statit.backend.repository.GlobalBaselineRepository;
+import com.statit.backend.repository.ScoreRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
+//----------------------------------------------------------------------------------------------------
+// Class Definition
+//----------------------------------------------------------------------------------------------------
+@Service
+public class CategoryService
+{
+    //------------------------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------------------------
+    public CategoryService(CategoryRepository categoryRepository,
+                           GlobalBaselineRepository globalBaselineRepository,
+                           ScoreRepository scoreRepository)
+<span class="fc" id="L42">    {</span>
+<span class="fc" id="L43">        this.categoryRepository = categoryRepository;</span>
+<span class="fc" id="L44">        this.globalBaselineRepository = globalBaselineRepository;</span>
+<span class="fc" id="L45">        this.scoreRepository = scoreRepository;</span>
+<span class="fc" id="L46">    }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Public Methods
+    //------------------------------------------------------------------------------------------------
+    @Transactional
+    public Category createCategory(String name,
+                                   String description,
+                                   String units,
+                                   List&lt;String&gt; tags,
+                                   Boolean sortOrder,
+                                   User foundingUser)
+    {
+        //Check if category exists already
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if(categoryRepository.findByCategoryName(name).isPresent())</span>
+        {
+<span class="fc" id="L62">            throw new IllegalArgumentException(&quot;Category already exists.&quot;);</span>
+        }
+
+        //Create and save the category
+<span class="fc" id="L66">        Category category = new Category(</span>
+                name,
+                description,
+                units,
+                tags,
+                sortOrder,
+                foundingUser
+        );
+
+        //Re-assign to ensure get UUID from database
+<span class="fc" id="L76">        category = categoryRepository.save(category);</span>
+
+        //Generate the baseline for the category
+<span class="fc" id="L79">        generateAndSaveGlobalBaseline(category);</span>
+
+<span class="fc" id="L81">        return category;</span>
+    }
+
+    @Transactional
+    public Category updateCategory(UUID categoryId,
+                                   String name,
+                                   String description,
+                                   List&lt;String&gt; tags,
+                                   String units,
+                                   Boolean sortOrder)
+    {
+<span class="fc" id="L92">        Category category = categoryRepository.findById(categoryId)</span>
+<span class="fc" id="L93">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Category not found.&quot;));</span>
+
+<span class="fc" id="L95">        category.update(name, description, units, tags, sortOrder);</span>
+<span class="fc" id="L96">        return categoryRepository.save(category);</span>
+    }
+
+    public Category getCategory(UUID categoryId)
+    {
+<span class="fc" id="L101">        return categoryRepository.findById(categoryId)</span>
+<span class="fc" id="L102">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Category not found.&quot;));</span>
+    }
+
+    public Page&lt;Category&gt; getAllCategories(Pageable pageable)
+    {
+<span class="fc" id="L107">        return categoryRepository.findAllByOrderByCategoryNameAsc(pageable);</span>
+    }
+
+    @Transactional
+    public void deleteCategory(UUID categoryId)
+    {
+        //Get the category to delete
+<span class="fc" id="L114">        Category category = categoryRepository.findById(categoryId)</span>
+<span class="fc" id="L115">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Category not found.&quot;));</span>
+
+        //Delete all scores in category
+<span class="fc" id="L118">        scoreRepository.deleteAllByCategory(category);</span>
+
+        //Delete all baselines in category
+<span class="fc" id="L121">        globalBaselineRepository.deleteAllByCategory(category);</span>
+
+        //Delete the category itself
+<span class="fc" id="L124">        categoryRepository.delete(category);</span>
+<span class="fc" id="L125">    }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Private Methods
+    //------------------------------------------------------------------------------------------------
+    private void generateAndSaveGlobalBaseline(Category category)
+    {
+<span class="fc" id="L132">        GlobalBaseline baseline = new GlobalBaseline(</span>
+                category,
+                new HashMap&lt;&gt;(),
+<span class="fc" id="L135">                0.0f,</span>
+<span class="fc" id="L136">                0.0f,</span>
+<span class="fc" id="L137">                0.0f,</span>
+                null,
+                null,
+                null,
+<span class="fc" id="L141">                0,</span>
+                &quot;My Global Ranking Team&quot;
+        );
+
+<span class="fc" id="L145">        globalBaselineRepository.save(baseline);</span>
+<span class="fc" id="L146">    }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Private Variables
+    //------------------------------------------------------------------------------------------------
+    private final CategoryRepository categoryRepository;
+    private final GlobalBaselineRepository globalBaselineRepository;
+    private final ScoreRepository scoreRepository;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

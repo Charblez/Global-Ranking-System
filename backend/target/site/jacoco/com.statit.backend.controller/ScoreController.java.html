@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScoreController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">springboot-program</a> &gt; <a href="index.source.html" class="el_package">com.statit.backend.controller</a> &gt; <span class="el_source">ScoreController.java</span></div><h1>ScoreController.java</h1><pre class="source lang-java linenums">/**
+ * Filename: ScoreController.java
+ * Author: Wilson Jimenez
+ * Description: API controller for score submission, retrieval, and deletion.
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
+package com.statit.backend.controller;
+
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
+import com.statit.backend.dto.ScoreInfoResponse;
+import com.statit.backend.dto.ScoreResponse;
+import com.statit.backend.dto.ScoreSubmitRequest;
+import com.statit.backend.model.Score;
+import com.statit.backend.service.ScoreService;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+//----------------------------------------------------------------------------------------------------
+// Class Definition
+//----------------------------------------------------------------------------------------------------
+@RestController
+@RequestMapping(&quot;/api/v1/scores&quot;)
+public class ScoreController
+{
+    //------------------------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------------------------
+    public ScoreController(ScoreService scoreService)
+<span class="fc" id="L39">    {</span>
+<span class="fc" id="L40">        this.scoreService = scoreService;</span>
+<span class="fc" id="L41">    }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Public Methods
+    //------------------------------------------------------------------------------------------------
+    @PostMapping
+    public ResponseEntity&lt;ScoreResponse&gt; submitScore(@RequestBody ScoreSubmitRequest request)
+    {
+<span class="fc" id="L49">        Score newScore = scoreService.submitScore(</span>
+<span class="fc" id="L50">                request.userId(),</span>
+<span class="fc" id="L51">                request.categoryId(),</span>
+<span class="fc" id="L52">                request.score(),</span>
+<span class="fc" id="L53">                request.tags(),</span>
+<span class="fc" id="L54">                request.anonymous()</span>
+        );
+
+<span class="fc" id="L57">        ScoreResponse response = ScoreResponse.fromScore(newScore, &quot;Score submitted successfully&quot;);</span>
+<span class="fc" id="L58">        return ResponseEntity.ok(response);</span>
+    }
+
+    @GetMapping(&quot;/{scoreId}&quot;)
+    public ResponseEntity&lt;ScoreResponse&gt; getScore(@PathVariable UUID scoreId)
+    {
+<span class="fc" id="L64">        Score score = scoreService.getScore(scoreId);</span>
+<span class="fc" id="L65">        ScoreResponse response = ScoreResponse.fromScore(score, null);</span>
+<span class="fc" id="L66">        return ResponseEntity.ok(response);</span>
+    }
+
+    @GetMapping(&quot;/{scoreId}/info&quot;)
+    public ResponseEntity&lt;ScoreInfoResponse&gt; getScoreInfo(@PathVariable UUID scoreId)
+    {
+<span class="fc" id="L72">        ScoreInfoResponse response = scoreService.getScoreInfo(scoreId);</span>
+<span class="fc" id="L73">        return ResponseEntity.ok(response);</span>
+    }
+
+    @GetMapping(&quot;/user/{username}&quot;)
+    public ResponseEntity&lt;List&lt;ScoreResponse&gt;&gt; getUserScores(@PathVariable String username,
+                                                              @RequestParam(defaultValue = &quot;0&quot;) int page,
+                                                              @RequestParam(defaultValue = &quot;25&quot;) int size)
+    {
+<span class="fc" id="L81">        Page&lt;Score&gt; scores = scoreService.getUserScores(username, page, size);</span>
+<span class="fc" id="L82">        List&lt;ScoreResponse&gt; responses = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        for(Score score : scores.getContent())</span>
+        {
+<span class="fc" id="L86">            responses.add(ScoreResponse.fromScore(score, null));</span>
+<span class="fc" id="L87">        }</span>
+
+<span class="fc" id="L89">        return ResponseEntity.ok(responses);</span>
+    }
+
+    @DeleteMapping(&quot;/{scoreId}&quot;)
+    public ResponseEntity&lt;ScoreResponse&gt; deleteScore(@PathVariable UUID scoreId)
+    {
+<span class="fc" id="L95">        Score score = scoreService.getScore(scoreId);</span>
+<span class="fc" id="L96">        ScoreResponse response = ScoreResponse.fromScore(score, &quot;Score deleted successfully&quot;);</span>
+<span class="fc" id="L97">        scoreService.deleteScore(scoreId);</span>
+<span class="fc" id="L98">        return ResponseEntity.ok(response);</span>
+    }
+
+    //------------------------------------------------------------------------------------------------
+    // Private Variables
+    //------------------------------------------------------------------------------------------------
+    private final ScoreService scoreService;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

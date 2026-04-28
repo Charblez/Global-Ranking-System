@@ -1,7 +1,7 @@
 /**
  * Filename: CategoryController.java
  * Author: Wilson Jimenez
- * Description: API controller for creating categories and listing available categories.
+ * Description: API controller for category CRUD operations.
  */
 
 //----------------------------------------------------------------------------------------------------
@@ -23,15 +23,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 //----------------------------------------------------------------------------------------------------
 // Class Definition
@@ -72,6 +68,14 @@ public class CategoryController
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{categoryId}")
+    public ResponseEntity<CategoryResponse> getCategory(@PathVariable UUID categoryId)
+    {
+        Category category = categoryService.getCategory(categoryId);
+        CategoryResponse response = CategoryResponse.fromCategory(category, null);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping
     public ResponseEntity<CategoryListResponse> getAllCategories(@RequestParam(defaultValue = "0") int page,
                                                                  @RequestParam(defaultValue = "25") int size)
@@ -93,6 +97,36 @@ public class CategoryController
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{categoryId}")
+    public ResponseEntity<CategoryResponse> updateCategory(@PathVariable UUID categoryId,
+                                                           @RequestBody CategoryCreateRequest request)
+    {
+        Category updated = categoryService.updateCategory(
+                categoryId,
+                request.name(),
+                request.description(),
+                request.tags(),
+                request.units(),
+                request.sortOrder()
+        );
+
+        CategoryResponse response = CategoryResponse.fromCategory(updated, "Category updated successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{categoryId}")
+    public ResponseEntity<CategoryResponse> deleteCategory(@PathVariable UUID categoryId)
+    {
+        Category category = categoryService.getCategory(categoryId);
+        String name = category.getName();
+        categoryService.deleteCategory(categoryId);
+
+        return ResponseEntity.ok(new CategoryResponse(
+                categoryId, name, null, null, null, null, null,
+                "Category deleted successfully"
+        ));
     }
 
     //------------------------------------------------------------------------------------------------
