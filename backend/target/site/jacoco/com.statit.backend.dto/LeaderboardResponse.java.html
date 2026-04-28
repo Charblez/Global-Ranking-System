@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LeaderboardResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">springboot-program</a> &gt; <a href="index.source.html" class="el_package">com.statit.backend.dto</a> &gt; <span class="el_source">LeaderboardResponse.java</span></div><h1>LeaderboardResponse.java</h1><pre class="source lang-java linenums">/**
+ * Filename: LeaderboardResponse.java
+ * Author: Charles Bassani
+ * Description: DTO for leaderboard responses
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
+package com.statit.backend.dto;
+
+import com.statit.backend.model.Category;
+import com.statit.backend.model.Score;
+import org.springframework.data.domain.Page;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+//----------------------------------------------------------------------------------------------------
+// Record Definition
+//----------------------------------------------------------------------------------------------------
+<span class="fc" id="L23">public record LeaderboardResponse(</span>
+        UUID categoryId,
+        String categoryName,
+        String units,
+        Boolean sortOrder,
+        List&lt;LeaderboardEntry&gt; scores,
+        int page,
+        int totalPages,
+        long totalElements
+)
+{
+    public static LeaderboardResponse fromPage(Category category, Page&lt;Score&gt; scorePage)
+    {
+<span class="fc" id="L36">        List&lt;LeaderboardEntry&gt; entries = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L37">        int topRank = scorePage.getNumber() * scorePage.getSize() + 1;</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        for (int i = 0; i &lt; scorePage.getContent().size(); i++)</span>
+        {
+<span class="fc" id="L41">            Score s = scorePage.getContent().get(i);</span>
+<span class="fc" id="L42">            entries.add(new LeaderboardEntry(</span>
+                    topRank + i,
+<span class="fc" id="L44">                    s.getScoreId(),</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">                    s.getAnonymous() ? &quot;Anonymous&quot; : s.getUser().getUsername(),</span>
+<span class="fc" id="L46">                    s.getScore(),</span>
+<span class="fc" id="L47">                    s.getTags(),</span>
+<span class="fc" id="L48">                    s.getAnonymous(),</span>
+<span class="fc" id="L49">                    s.getSubmittedAt()</span>
+            ));
+        }
+
+<span class="fc" id="L53">        return new LeaderboardResponse(</span>
+<span class="fc" id="L54">                category.getCategoryId(),</span>
+<span class="fc" id="L55">                category.getName(),</span>
+<span class="fc" id="L56">                category.getUnits(),</span>
+<span class="fc" id="L57">                category.getSortOrder(),</span>
+                entries,
+<span class="fc" id="L59">                scorePage.getNumber(),</span>
+<span class="fc" id="L60">                scorePage.getTotalPages(),</span>
+<span class="fc" id="L61">                scorePage.getTotalElements()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

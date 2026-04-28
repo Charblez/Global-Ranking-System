@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">springboot-program</a> &gt; <a href="index.source.html" class="el_package">com.statit.backend.service</a> &gt; <span class="el_source">UserService.java</span></div><h1>UserService.java</h1><pre class="source lang-java linenums">/**
+ * Filename: UserService.java
+ * Author: Wilson Jimenez
+ * Description: Handles CRUD operations for users and deletes user scores through ScoreService
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
+package com.statit.backend.service;
+
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
+import com.statit.backend.model.Score;
+import com.statit.backend.model.User;
+import com.statit.backend.repository.ScoreRepository;
+import com.statit.backend.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+//----------------------------------------------------------------------------------------------------
+// Class Definition
+//----------------------------------------------------------------------------------------------------
+@Service
+public class UserService
+{
+    //------------------------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------------------------
+    public UserService(UserRepository userRepository,
+                       ScoreRepository scoreRepository,
+                       ScoreService scoreService)
+<span class="fc" id="L42">    {</span>
+<span class="fc" id="L43">        this.userRepository = userRepository;</span>
+<span class="fc" id="L44">        this.scoreRepository = scoreRepository;</span>
+<span class="fc" id="L45">        this.scoreService = scoreService;</span>
+<span class="fc" id="L46">    }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Public Methods
+    //------------------------------------------------------------------------------------------------
+    @Transactional
+    public User createUser(String username,
+                           String email,
+                           String passwordHash,
+                           LocalDate birthday,
+                           Map&lt;String, String&gt; demographics)
+    {
+        //Check if username exists already
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if(userRepository.findByUsername(username).isPresent())</span>
+        {
+<span class="fc" id="L61">            throw new IllegalArgumentException(&quot;Username already exists.&quot;);</span>
+        }
+
+        //Check if email exists already
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if(userRepository.findByEmail(email).isPresent())</span>
+        {
+<span class="fc" id="L67">            throw new IllegalArgumentException(&quot;Email already exists.&quot;);</span>
+        }
+
+        //Create and save the user
+<span class="fc" id="L71">        User user = new User(username, email, passwordHash, birthday, demographics);</span>
+<span class="fc" id="L72">        return userRepository.save(user);</span>
+    }
+
+    public User getUser(UUID userId)
+    {
+<span class="fc" id="L77">        return userRepository.findById(userId)</span>
+<span class="fc" id="L78">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;User not found.&quot;));</span>
+    }
+
+    public User getUser(String username)
+    {
+<span class="fc" id="L83">        return userRepository.findByUsername(username)</span>
+<span class="fc" id="L84">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;User not found.&quot;));</span>
+    }
+
+    public List&lt;User&gt; getAllUsers()
+    {
+<span class="fc" id="L89">        return userRepository.findAll();</span>
+    }
+
+    @Transactional
+    public User updateUser(UUID userId,
+                           String username,
+                           String email,
+                           String passwordHash,
+                           LocalDate birthday,
+                           Map&lt;String, String&gt; demographics)
+    {
+        //Fetch existing user
+<span class="fc" id="L101">        User user = userRepository.findById(userId)</span>
+<span class="fc" id="L102">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;User not found.&quot;));</span>
+
+        //Check if username conflicts with another user
+<span class="fc" id="L105">        Optional&lt;User&gt; userWithUsername = userRepository.findByUsername(username);</span>
+<span class="fc bfc" id="L106" title="All 4 branches covered.">        if(userWithUsername.isPresent() &amp;&amp; !userWithUsername.get().getUserId().equals(userId))</span>
+        {
+<span class="fc" id="L108">            throw new IllegalArgumentException(&quot;Username already exists.&quot;);</span>
+        }
+
+        //Check if email conflicts with another user
+<span class="fc" id="L112">        Optional&lt;User&gt; userWithEmail = userRepository.findByEmail(email);</span>
+<span class="fc bfc" id="L113" title="All 4 branches covered.">        if(userWithEmail.isPresent() &amp;&amp; !userWithEmail.get().getUserId().equals(userId))</span>
+        {
+<span class="fc" id="L115">            throw new IllegalArgumentException(&quot;Email already exists.&quot;);</span>
+        }
+
+        //Update mutable fields only 
+<span class="fc" id="L119">        user.setUsername(username);</span>
+<span class="fc" id="L120">        user.setEmail(email);</span>
+<span class="fc" id="L121">        user.setPasswordHash(passwordHash);</span>
+<span class="fc" id="L122">        user.setBirthday(birthday);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        user.setDemographics(demographics != null ? demographics : new HashMap&lt;&gt;());</span>
+<span class="fc" id="L124">        return userRepository.save(user);</span>
+    }
+
+    @Transactional
+    public void deleteUser(UUID userId)
+    {
+        //Get the user to delete
+<span class="fc" id="L131">        User user = userRepository.findById(userId)</span>
+<span class="fc" id="L132">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;User not found.&quot;));</span>
+
+        //Collect all score IDs before deleting to avoid list mutation issues
+<span class="fc" id="L135">        List&lt;Score&gt; userScores = scoreRepository.findAllByUser(user);</span>
+<span class="fc" id="L136">        List&lt;UUID&gt; scoreIds = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        for(Score score : userScores)</span>
+        {
+<span class="fc" id="L140">            scoreIds.add(score.getScoreId());</span>
+<span class="fc" id="L141">        }</span>
+
+        //Delete each score through ScoreService so baselines are kept consistent
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        for(UUID scoreId : scoreIds)</span>
+        {
+<span class="fc" id="L146">            scoreService.deleteScore(scoreId);</span>
+<span class="fc" id="L147">        }</span>
+
+        //Delete the user
+<span class="fc" id="L150">        userRepository.delete(user);</span>
+<span class="fc" id="L151">    }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Private Variables
+    //------------------------------------------------------------------------------------------------
+    private final UserRepository userRepository;
+    private final ScoreRepository scoreRepository;
+    private final ScoreService scoreService;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

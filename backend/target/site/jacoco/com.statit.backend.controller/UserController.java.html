@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">springboot-program</a> &gt; <a href="index.source.html" class="el_package">com.statit.backend.controller</a> &gt; <span class="el_source">UserController.java</span></div><h1>UserController.java</h1><pre class="source lang-java linenums">/**
+ * Filename: UserController.java
+ * Author: Charles Bassani
+ * Description: API controller for user CRUD operations.
+ */
+
+//----------------------------------------------------------------------------------------------------
+// Package
+//----------------------------------------------------------------------------------------------------
+package com.statit.backend.controller;
+
+//----------------------------------------------------------------------------------------------------
+// Imports
+//----------------------------------------------------------------------------------------------------
+import com.statit.backend.dto.UserCreateRequest;
+import com.statit.backend.dto.UserResponse;
+import com.statit.backend.model.User;
+import com.statit.backend.service.UserService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+//----------------------------------------------------------------------------------------------------
+// Class Definition
+//----------------------------------------------------------------------------------------------------
+@RestController
+@RequestMapping(&quot;/api/v1/users&quot;)
+public class UserController
+{
+    //------------------------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------------------------
+    public UserController(UserService userService)
+<span class="fc" id="L37">    {</span>
+<span class="fc" id="L38">        this.userService = userService;</span>
+<span class="fc" id="L39">    }</span>
+
+    //------------------------------------------------------------------------------------------------
+    // Public Methods
+    //------------------------------------------------------------------------------------------------
+    @PostMapping
+    public ResponseEntity&lt;UserResponse&gt; createUser(@RequestBody UserCreateRequest request)
+    {
+<span class="fc" id="L47">        User newUser = userService.createUser(</span>
+<span class="fc" id="L48">                request.username(),</span>
+<span class="fc" id="L49">                request.email(),</span>
+<span class="fc" id="L50">                request.passwordHash(),</span>
+<span class="fc" id="L51">                request.birthday(),</span>
+<span class="fc" id="L52">                request.demographics()</span>
+        );
+
+<span class="fc" id="L55">        UserResponse userResponse = UserResponse.fromUser(newUser, &quot;User created successfully&quot;);</span>
+<span class="fc" id="L56">        return ResponseEntity.ok(userResponse);</span>
+    }
+
+    @GetMapping(&quot;/{username}&quot;)
+    public ResponseEntity&lt;UserResponse&gt; getUserByUsername(@PathVariable String username)
+    {
+<span class="fc" id="L62">        User user = userService.getUser(username);</span>
+<span class="fc" id="L63">        UserResponse response = UserResponse.fromUser(user, null);</span>
+<span class="fc" id="L64">        return ResponseEntity.ok(response);</span>
+    }
+
+    @GetMapping
+    public ResponseEntity&lt;List&lt;UserResponse&gt;&gt; getAllUsers()
+    {
+<span class="fc" id="L70">        List&lt;User&gt; users = userService.getAllUsers();</span>
+<span class="fc" id="L71">        List&lt;UserResponse&gt; responses = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        for(User user : users)</span>
+        {
+<span class="fc" id="L75">            responses.add(UserResponse.fromUser(user, null));</span>
+<span class="fc" id="L76">        }</span>
+
+<span class="fc" id="L78">        return ResponseEntity.ok(responses);</span>
+    }
+
+    @PutMapping(&quot;/{userId}&quot;)
+    public ResponseEntity&lt;UserResponse&gt; updateUser(@PathVariable UUID userId,
+                                                   @RequestBody UserCreateRequest request)
+    {
+<span class="fc" id="L85">        User updatedUser = userService.updateUser(</span>
+                userId,
+<span class="fc" id="L87">                request.username(),</span>
+<span class="fc" id="L88">                request.email(),</span>
+<span class="fc" id="L89">                request.passwordHash(),</span>
+<span class="fc" id="L90">                request.birthday(),</span>
+<span class="fc" id="L91">                request.demographics()</span>
+        );
+
+<span class="fc" id="L94">        UserResponse response = UserResponse.fromUser(updatedUser, &quot;User updated successfully&quot;);</span>
+<span class="fc" id="L95">        return ResponseEntity.ok(response);</span>
+    }
+
+    @DeleteMapping(&quot;/{userId}&quot;)
+    public ResponseEntity&lt;UserResponse&gt; deleteUser(@PathVariable UUID userId)
+    {
+<span class="fc" id="L101">        User user = userService.getUser(userId);</span>
+<span class="fc" id="L102">        String username = user.getUsername();</span>
+<span class="fc" id="L103">        userService.deleteUser(userId);</span>
+
+<span class="fc" id="L105">        return ResponseEntity.ok(new UserResponse(</span>
+                userId, username, null, null, null, null,
+                &quot;User deleted successfully&quot;
+        ));
+    }
+
+    //------------------------------------------------------------------------------------------------
+    // Private Variables
+    //------------------------------------------------------------------------------------------------
+    private final UserService userService;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
